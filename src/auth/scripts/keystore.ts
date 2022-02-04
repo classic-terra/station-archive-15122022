@@ -19,6 +19,7 @@ export const clearWallet = () => {
 
 /* stored wallets */
 type StoredKey = StoredWallet | StoredWalletLegacy | MultisigWallet
+
 export const getStoredWallets = () => {
   const keys = localStorage.getItem("keys") ?? "[]"
   return JSON.parse(keys) as StoredKey[]
@@ -31,7 +32,7 @@ const storeWallets = (wallets: StoredKey[]) => {
 /* stored wallet */
 export const getStoredWallet = (name: string) => {
   const wallets = getStoredWallets()
-  const wallet = wallets.find((wallet) => wallet.name === name)
+  const wallet = wallets.find((wallet) => wallet.name === name.toLowerCase())
   if (!wallet) throw new Error("Wallet does not exist")
   return wallet
 }
@@ -71,8 +72,9 @@ type AddWalletParams =
 
 export const addWallet = (params: AddWalletParams) => {
   const wallets = getStoredWallets()
+  const name = params.name.toLowerCase()
 
-  if (wallets.find((wallet) => wallet.name === params.name))
+  if (wallets.find((wallet) => wallet.name === name))
     throw new Error("Wallet already exists")
 
   const next = wallets.filter((wallet) => wallet.address !== params.address)
@@ -80,7 +82,7 @@ export const addWallet = (params: AddWalletParams) => {
   if (is.multisig(params)) {
     storeWallets([...next, params])
   } else {
-    const { name, password, address, key } = params
+    const { password, address, key } = params
     const encrypted = encrypt(key.toString("hex"), password)
     storeWallets([...next, { name, address, encrypted }])
   }
@@ -93,7 +95,9 @@ interface ChangePasswordParams {
 }
 
 export const changePassword = (params: ChangePasswordParams) => {
-  const { name, oldPassword, newPassword } = params
+  const { oldPassword, newPassword } = params
+  const name = params.name.toLowerCase()
+
   testPassword({ name, password: oldPassword })
   const key = getDecryptedKey({ name, password: oldPassword })
   const encrypted = encrypt(key, newPassword)
@@ -112,14 +116,14 @@ export const changePassword = (params: ChangePasswordParams) => {
 
 export const deleteWallet = (name: string) => {
   const wallets = getStoredWallets()
-  const next = wallets.filter((wallet) => wallet.name !== name)
+  const next = wallets.filter((wallet) => wallet.name !== name.toLowerCase())
   storeWallets(next)
 }
 
 export const lockWallet = (name: string) => {
   const wallets = getStoredWallets()
   const next = wallets.map((wallet) =>
-    wallet.name === name ? { ...wallet, lock: true } : wallet
+    wallet.name === name.toLowerCase() ? { ...wallet, lock: true } : wallet
   )
 
   storeWallets(next)
@@ -132,7 +136,7 @@ export const unlockWallet = (name: string, password = "") => {
 
   const next = wallets.map((wallet) => {
     const { lock, ...rest } = wallet
-    return wallet.name === name ? rest : wallet
+    return wallet.name === name.toLowerCase() ? rest : wallet
   })
 
   storeWallets(next)
