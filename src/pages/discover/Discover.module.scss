@@ -1,3 +1,7 @@
+@import "mixins";
+
 .list {
-  grid-template-columns: repeat(3, 1fr);
+  @include desktop {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
