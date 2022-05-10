@@ -1,0 +1,16 @@
+.component {
+  background: var(--card-bg);
+  border: var(--border-width) solid var(--card-border);
+  border-radius: 8px;
+  padding: 28px;
+  text-align: center;
+
+  &:hover {
+    background: var(--bg-muted);
+    text-decoration: none;
+  }
+}
+
+.title {
+  font-size: 16px;
+}

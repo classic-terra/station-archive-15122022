@@ -9,6 +9,7 @@ import { ReactComponent as SwapIcon } from "styles/images/menu/Swap.svg"
 import { ReactComponent as StakeIcon } from "styles/images/menu/Stake.svg"
 import { ReactComponent as GovernanceIcon } from "styles/images/menu/Governance.svg"
 import { ReactComponent as ContractIcon } from "styles/images/menu/Contract.svg"
+import { ReactComponent as DiscoverIcon } from "styles/images/menu/Discover.svg"
 
 /* menu */
 import Dashboard from "pages/dashboard/Dashboard"
@@ -18,6 +19,7 @@ import History from "pages/history/History"
 import Stake from "pages/stake/Stake"
 import Governance from "pages/gov/Governance"
 import Contract from "pages/contract/Contract"
+import Discover from "pages/discover/Discover"
 
 /* details */
 import ValidatorDetails from "pages/stake/ValidatorDetails"
@@ -104,6 +106,12 @@ export const useNav = () => {
       element: <Contract />,
       title: t("Contract"),
       icon: <ContractIcon {...ICON_SIZE} />,
+    },
+    {
+      path: "/discover",
+      element: <Discover />,
+      title: t("Discover"),
+      icon: <DiscoverIcon {...ICON_SIZE} />,
     },
   ]
 
