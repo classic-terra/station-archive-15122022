@@ -90,7 +90,7 @@ const list = [
     image: IMAGE,
   },
   {
-    url: "https://www.pylon.money/",
+    url: "https://pylon.money/",
     name: "Pylon Protocol",
     description: LoremIpsum,
     image: IMAGE,
@@ -162,7 +162,7 @@ const list = [
     image: IMAGE,
   },
   {
-    url: "https://www.oneplanetnft.io/",
+    url: "https://oneplanetnft.io/",
     name: "OnePlanet",
     description: LoremIpsum,
     image: IMAGE,
@@ -216,7 +216,7 @@ const list = [
     image: IMAGE,
   },
   {
-    url: "https://www.angelprotocol.io/app/marketplace",
+    url: "https://angelprotocol.io/app/marketplace",
     name: "Angel Protocol",
     description: LoremIpsum,
     image: IMAGE,
