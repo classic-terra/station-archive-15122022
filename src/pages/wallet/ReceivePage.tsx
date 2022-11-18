@@ -1,5 +1,5 @@
 import { useInterchainAddresses } from "auth/hooks/useAddress"
-import { Input } from "components/form"
+// import { Input } from "components/form"
 import AddressBox from "components/form/AddressBox"
 import { useChains } from "data/queries/chains"
 import { useEffect, useState } from "react"

@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { LinkButton } from "components/general"
 import { Col, Page } from "components/layout"
-import Staked from "./Staked"
-import Validators from "./Validators"
+import StakeOptions from "./StakeOptions"
 
 const Stake = () => {
   const { t } = useTranslation()
@@ -17,8 +16,7 @@ const Stake = () => {
       }
     >
       <Col>
-        <Staked />
-        <Validators />
+        <StakeOptions />
       </Col>
     </Page>
   )
