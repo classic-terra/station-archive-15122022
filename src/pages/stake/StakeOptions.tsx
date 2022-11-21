@@ -14,7 +14,7 @@ const StakeOptions = () => {
     {
       key: "manual",
       tab: t("Manual stake"),
-      children: [<Validators />],
+      children: <Validators />,
     },
   ]
 
