@@ -14,7 +14,8 @@ import { Grid } from "components/layout"
 import { Form, FormItem, FormWarning, Input, Select } from "components/form"
 import { getPlaceholder, toInput } from "../utils"
 import validate from "../validate"
-import Tx, { getInitialGasDenom } from "../Tx"
+import InterchainTx from "../InterchainTx"
+import { getInitialGasDenom } from "../Tx"
 
 interface TxValues {
   source?: ValAddress
@@ -137,7 +138,8 @@ const StakeForm = (props: Props) => {
   }
 
   return (
-    <Tx {...tx}>
+    // @ts-ignore-next-line
+    <InterchainTx chain="phoenix-1" {...tx}>
       {({ max, fee, submit }) => (
         <Form onSubmit={handleSubmit(submit.fn)}>
           {
@@ -218,7 +220,7 @@ const StakeForm = (props: Props) => {
           {submit.button}
         </Form>
       )}
-    </Tx>
+    </InterchainTx>
   )
 }
 

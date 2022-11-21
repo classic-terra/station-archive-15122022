@@ -163,3 +163,15 @@ export const useVotingPowerRate = (address: ValAddress) => {
 
   return { data, ...state }
 }
+
+export const useFindQuickStakeVals = (): any[] => {
+  const { data: TerraValidators } = useTerraValidators()
+  if (!TerraValidators) return []
+  const calcRate = getCalcVotingPowerRate(TerraValidators)
+  const valsByVotingPower = TerraValidators.map((validator) => ({
+    address: validator.operator_address,
+    votingPower: calcRate(validator.operator_address) ?? 0 * 100,
+  })).sort((a, b) => b.votingPower - a.votingPower)
+  console.log("valsByVotingPower", valsByVotingPower)
+  return []
+}
