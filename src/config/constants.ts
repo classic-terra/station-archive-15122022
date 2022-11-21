@@ -32,6 +32,9 @@ export const CLASSIC_DEFAULT_GAS_ADJUSTMENT = 3
 /* swap */
 export const TERRASWAP_COMMISSION_RATE = 0.003
 
+/* stake */
+export const QUICK_STAKE_EXCLUDE_THRESHOLD = 0.33
+
 /* placeholder */
 // https://github.com/terra-money/localterra
 export const SAMPLE_ADDRESS = "terra1x46rqay4d3cssq8gxxvqz8xt6nwlz4td20k38v"

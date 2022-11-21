@@ -8,6 +8,7 @@ import { TerraProposalItem } from "types/proposal"
 import { useNetwork } from "data/wallet"
 import { useNetworks } from "app/InitNetworks"
 import { queryKey, RefetchOptions } from "../query"
+import { QUICK_STAKE_EXCLUDE_THRESHOLD } from "config/constants"
 
 export enum Aggregate {
   PERIODIC = "periodic",
@@ -164,14 +165,23 @@ export const useVotingPowerRate = (address: ValAddress) => {
   return { data, ...state }
 }
 
-export const useFindQuickStakeVals = (): any[] => {
-  const { data: TerraValidators } = useTerraValidators()
-  if (!TerraValidators) return []
+export const useFindQuickStakeVals = () => {
+  const { data: TerraValidators, ...state } = useTerraValidators()
+  if (!TerraValidators) return
+
   const calcRate = getCalcVotingPowerRate(TerraValidators)
-  const valsByVotingPower = TerraValidators.map((validator) => ({
-    address: validator.operator_address,
-    votingPower: calcRate(validator.operator_address) ?? 0 * 100,
+  // const calcUptime = getCalcUptime({ slash_window: 1200000 })
+  let sumVotingPower = 0
+  console.log("TerraValidators", TerraValidators)
+  const valsByVotingPower = TerraValidators.map((v) => ({
+    address: v.operator_address,
+    uptime: v.miss_counter,
+    votingPower: calcRate(v.operator_address) ?? 0 * 100,
   })).sort((a, b) => b.votingPower - a.votingPower)
+  //       .forEach(v => {
+  //   if (sumVotingPower >= QUICK_STAKE_EXCLUDE_THRESHOLD) return
+  //   sumVotingPower += v.votingPower
+  // });
   console.log("valsByVotingPower", valsByVotingPower)
-  return []
+  return { ...state, data: valsByVotingPower }
 }
