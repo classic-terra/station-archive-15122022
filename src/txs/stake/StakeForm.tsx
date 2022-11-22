@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
-import { AccAddress, Coin, ValAddress } from "@terra-money/terra.js"
-import { Delegation, Validator } from "@terra-money/terra.js"
-import { MsgDelegate, MsgUndelegate } from "@terra-money/terra.js"
-import { MsgBeginRedelegate } from "@terra-money/terra.js"
+import { AccAddress, Coin, ValAddress } from "@terra-money/station.js"
+import { Delegation, Validator } from "@terra-money/station.js"
+import { MsgDelegate, MsgUndelegate } from "@terra-money/station.js"
+import { MsgBeginRedelegate } from "@terra-money/station.js"
 import { toAmount } from "@terra.kitchen/utils"
 import { getAmount } from "utils/coin"
 import { queryKey } from "data/query"
@@ -41,6 +41,7 @@ const StakeForm = (props: Props) => {
 
   const { t } = useTranslation()
   const address = useAddress()
+  // @ts-expect-error
   const findMoniker = getFindMoniker(validators)
 
   const delegationsOptions = delegations.filter(
@@ -79,7 +80,7 @@ const StakeForm = (props: Props) => {
       if (tab === StakeAction.REDELEGATE) {
         if (!source) return
         const msg = new MsgBeginRedelegate(address, source, destination, coin)
-        return { msgs: [msg] }
+        return { msgs: [msg], chainID: "phoenix-1" }
       }
 
       const msgs = {
@@ -87,7 +88,7 @@ const StakeForm = (props: Props) => {
         [StakeAction.UNBOND]: [new MsgUndelegate(address, destination, coin)],
       }[tab]
 
-      return { msgs }
+      return { msgs, chainID: "phoenix-1" }
     },
     [address, destination, tab]
   )
@@ -127,7 +128,7 @@ const StakeForm = (props: Props) => {
     createTx,
     onChangeMax,
     onSuccess: {
-      label: findMoniker(destination),
+      //label: findMoniker(destination),
       path: `/validator/${destination}`,
     },
     queryKeys: [
@@ -135,11 +136,11 @@ const StakeForm = (props: Props) => {
       queryKey.staking.unbondings,
       queryKey.distribution.rewards,
     ],
+    chain: "phoenix-1",
   }
 
   return (
-    // @ts-ignore-next-line
-    <InterchainTx chain="phoenix-1" {...tx}>
+    <InterchainTx {...tx}>
       {({ max, fee, submit }) => (
         <Form onSubmit={handleSubmit(submit.fn)}>
           {

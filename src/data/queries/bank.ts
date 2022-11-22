@@ -114,7 +114,7 @@ interface CoinBalance {
 
 export const useBalances = () => {
   const addresses = useInterchainAddresses()
-  const lcd = useLCDClient()
+  const lcd = useInterchainLCDClient()
 
   return useQuery(
     [queryKey.bank.balances, addresses],
