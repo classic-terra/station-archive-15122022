@@ -15,6 +15,7 @@ const QuickStake = () => {
   )
   const options = [{ value: "delegate" }, { value: "undelegate" }]
   const destination = "terravaloper1q8w4u2wyhx574m70gwe8km5za2ptanny9mnqy3"
+  const chainID = "phoenix-1" as InterchainId // TODO: integrate pills to select chainID
 
   const renderStakeForm = () => {
     if (!(balances && validators && delegations)) return null
@@ -25,6 +26,7 @@ const QuickStake = () => {
       validators,
       delegations,
       isQuickStake: true,
+      chainID,
     }
     return <StakeForm {...props} />
   }

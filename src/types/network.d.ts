@@ -13,3 +13,5 @@ type CustomNetworks = Record<NetworkName, CustomNetwork>
 interface CustomNetwork extends TerraNetwork {
   preconfigure?: boolean
 }
+
+type InterchainId = "phoenix-1" | "pisco-1" | "osmosis-1"

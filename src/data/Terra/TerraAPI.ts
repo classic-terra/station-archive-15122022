@@ -8,6 +8,9 @@ import { TerraProposalItem } from "types/proposal"
 import { useNetwork } from "data/wallet"
 import { useNetworks } from "app/InitNetworks"
 import { queryKey, RefetchOptions } from "../query"
+import { Pagination } from "../query"
+import { useInterchainLCDClient } from "data/queries/lcdClient"
+import { PubKey } from "utils/keys"
 
 export enum Aggregate {
   PERIODIC = "periodic",
@@ -164,53 +167,81 @@ export const useVotingPowerRate = (address: ValAddress) => {
   return { data, ...state }
 }
 
-export const useCreateQuickStakeTx = (amount: number) => {
-  const EXCLUDE_TOP = 35
-  // max commission rate for a validator to be included
+export const useInterchainQuickStake = async (
+  amount: number,
+  chainID: InterchainId
+) => {
   const MAX_COMMISSION = 0.1 // 0.1 = 10%
-  // how much should downtime weight
-  const DOWNTIME_WEIGHT = 10 // 1% downtime will reduce score by 10%
-  // number of blocks for slashes events
   const SLASH_WINDOW = 1_200_000
   const VOTE_POWER_INCLUDE = 0.65
+  const lcd = useInterchainLCDClient()
 
-  const { data: TerraValidators } = useTerraValidators()
-  if (!TerraValidators) return
-  const calcRate = getCalcVotingPowerRate(TerraValidators)
-  const { valsBelowVotePowerThreshold } = TerraValidators.map((v) => ({
-    address: v.operator_address,
-    votingPower: calcRate(v.operator_address) ?? 0 * 100,
-  }))
-    .sort((a, b) => a.votingPower - b.votingPower)
+  const {
+    block: {
+      header: { height: latestHeight },
+    },
+  } = await lcd.tendermint.blockInfo(chainID)
+
+  const signInfoParams = {
+    ...Pagination,
+    starting_height: Number(latestHeight) - SLASH_WINDOW,
+    ending_height: Number(latestHeight),
+  }
+
+  const [SigningInfos, [Validators]] = await Promise.all([
+    lcd.slashing.signingInfos(chainID, { ...signInfoParams }),
+    lcd.staking.validators(chainID, { ...Pagination }),
+  ])
+
+  if (!Validators || !SigningInfos || !latestHeight) return
+
+  // const { data: { slashes } }: { data: { slashes: any[] } } = await axios.get(`${LCD}/cosmos/distribution/v1beta1/validators/${operator_address}/slashes?starting_height=${lastBlockHeight - SLASH_WINDOW}&ending_height=${lastBlockHeight}`)
+
+  const totalTokens = BigNumber.sum(
+    ...Validators.map(({ tokens = 0 }) => Number(tokens))
+  ).toNumber()
+
+  let vals = await Promise.all(
+    Validators.map(async (v) => {
+      const {
+        data: { slashes },
+      }: { data: { slashes: any[] } } = await axios.get(
+        `https://phoenix-lcd.terra.dev/cosmos/distribution/v1beta1/validators/${
+          v.operator_address
+        }/slashes?starting_height=${
+          Number(latestHeight) - SLASH_WINDOW
+        }&ending_height=${latestHeight}`
+      )
+      const consAddress = new PubKey(v.consensus_pubkey).toBech32()
+      return {
+        ...v,
+        ...SigningInfos.find((si) => si.address === consAddress),
+        slashes,
+        votingPower: Number(v.tokens) / totalTokens,
+      }
+    })
+  )
+    .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
     .reduce(
       (acc, cur) => {
         acc.sumVotePower += cur.votingPower
         if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
-          acc.valsBelowVotePowerThreshold.push(cur)
+          acc.elgible.push(cur)
         }
         return acc
       },
       {
         sumVotePower: 0,
-        valsBelowVotePowerThreshold: [] as {
-          address: ValAddress
-          votingPower: number
-        }[],
+        elgible: [] as any[], // todo: fix type
       }
     )
+  console.log("vals.elgible", vals.elgible)
 
-  let sum = 0
-  valsBelowVotePowerThreshold.forEach((v) => {
-    sum += v.votingPower
-  })
-  console.log("sum", sum)
-
-  console.log("valsBelowVotePowerThreshold", valsBelowVotePowerThreshold)
+  //  vals.elgible = vals.elgible.filter(({ commission }) => parseFloat(commission.commission_rates.rate) <= MAX_COMMISSION)
 
   // ; (async () => {
   //   // fetch validators list
   //   let { data: { validators } }: { data: { validators: Validator[] } } = await axios.get(`${LCD}/cosmos/staking/v1beta1/validators?pagination.limit=1000`)
-  //   const { data: { info: signingInfo } }: { data: { info: SigningInfo[] } } = await axios.get(`${LCD}/cosmos/slashing/v1beta1/signing_infos?pagination.limit=1000`)
   //   const { data: { block: lastBlock } } = await axios.get(`${LCD}/blocks/latest`)
   //   const lastBlockHeight = parseInt(lastBlock.header.height)
   //   console.log(`Last block height: ${lastBlockHeight}`)
