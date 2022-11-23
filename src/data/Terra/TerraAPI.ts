@@ -8,7 +8,6 @@ import { TerraProposalItem } from "types/proposal"
 import { useNetwork } from "data/wallet"
 import { useNetworks } from "app/InitNetworks"
 import { queryKey, RefetchOptions } from "../query"
-import { QUICK_STAKE_EXCLUDE_THRESHOLD } from "config/constants"
 
 export enum Aggregate {
   PERIODIC = "periodic",
@@ -165,23 +164,117 @@ export const useVotingPowerRate = (address: ValAddress) => {
   return { data, ...state }
 }
 
-export const useFindQuickStakeVals = () => {
-  const { data: TerraValidators, ...state } = useTerraValidators()
-  if (!TerraValidators) return
+export const useCreateQuickStakeTx = (amount: number) => {
+  const EXCLUDE_TOP = 35
+  // max commission rate for a validator to be included
+  const MAX_COMMISSION = 0.1 // 0.1 = 10%
+  // how much should downtime weight
+  const DOWNTIME_WEIGHT = 10 // 1% downtime will reduce score by 10%
+  // number of blocks for slashes events
+  const SLASH_WINDOW = 1_200_000
+  const VOTE_POWER_INCLUDE = 0.65
 
+  const { data: TerraValidators } = useTerraValidators()
+  if (!TerraValidators) return
   const calcRate = getCalcVotingPowerRate(TerraValidators)
-  // const calcUptime = getCalcUptime({ slash_window: 1200000 })
-  let sumVotingPower = 0
-  console.log("TerraValidators", TerraValidators)
-  const valsByVotingPower = TerraValidators.map((v) => ({
+  const { valsBelowVotePowerThreshold } = TerraValidators.map((v) => ({
     address: v.operator_address,
-    uptime: v.miss_counter,
     votingPower: calcRate(v.operator_address) ?? 0 * 100,
-  })).sort((a, b) => b.votingPower - a.votingPower)
-  //       .forEach(v => {
-  //   if (sumVotingPower >= QUICK_STAKE_EXCLUDE_THRESHOLD) return
-  //   sumVotingPower += v.votingPower
-  // });
-  console.log("valsByVotingPower", valsByVotingPower)
-  return { ...state, data: valsByVotingPower }
+  }))
+    .sort((a, b) => a.votingPower - b.votingPower)
+    .reduce(
+      (acc, cur) => {
+        acc.sumVotePower += cur.votingPower
+        if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
+          acc.valsBelowVotePowerThreshold.push(cur)
+        }
+        return acc
+      },
+      {
+        sumVotePower: 0,
+        valsBelowVotePowerThreshold: [] as {
+          address: ValAddress
+          votingPower: number
+        }[],
+      }
+    )
+
+  let sum = 0
+  valsBelowVotePowerThreshold.forEach((v) => {
+    sum += v.votingPower
+  })
+  console.log("sum", sum)
+
+  console.log("valsBelowVotePowerThreshold", valsBelowVotePowerThreshold)
+
+  // ; (async () => {
+  //   // fetch validators list
+  //   let { data: { validators } }: { data: { validators: Validator[] } } = await axios.get(`${LCD}/cosmos/staking/v1beta1/validators?pagination.limit=1000`)
+  //   const { data: { info: signingInfo } }: { data: { info: SigningInfo[] } } = await axios.get(`${LCD}/cosmos/slashing/v1beta1/signing_infos?pagination.limit=1000`)
+  //   const { data: { block: lastBlock } } = await axios.get(`${LCD}/blocks/latest`)
+  //   const lastBlockHeight = parseInt(lastBlock.header.height)
+  //   console.log(`Last block height: ${lastBlockHeight}`)
+  //   // remove jailed or unbonded validators
+  //   validators = validators.filter(({ jailed, status }) => !jailed && status === 'BOND_STATUS_BONDED')
+  //   // sort from highest to lowest voting power
+  //   validators.sort((a, b) => parseInt(b.tokens) - parseInt(a.tokens))
+  //   // save the voting power of the top validator
+  //   const topVotingPower = parseInt(validators[0].tokens) / 1e6
+  //   // remove the top EXCLUDE_TOP
+  //   validators.splice(0, EXCLUDE_TOP)
+  //   // remove validators with commission > MAX_COMMISSION
+  //   validators = validators.filter(({ commission }) => parseFloat(commission.commission_rates.rate) <= MAX_COMMISSION)
+
+  //   const result = await Promise.all(validators.map(async ({ operator_address, consensus_pubkey, tokens, description }) => {
+  //     const consAddress = new PubKey(consensus_pubkey).toBech32()
+  //     const missedBlocks = parseInt(signingInfo.find(({ address }) => address === consAddress)?.missed_blocks_counter || '0')
+  //     // TODO: is missedBlocks on the latest 10k block or slashing window?
+  //     const downtime = (missedBlocks / 10_000)
+  //     const votingPower = Math.round(parseInt(tokens) / 1e6)
+  //     // fetch slash events
+  //     const { data: { slashes } }: { data: { slashes: any[] } } = await axios.get(`${LCD}/cosmos/distribution/v1beta1/validators/${operator_address}/slashes?starting_height=${lastBlockHeight - SLASH_WINDOW}&ending_height=${lastBlockHeight}`)
+  //     // TODO: fetch governance & slashing
+  //     const score = slashes.length ? 0 : Math.round(((topVotingPower - votingPower) * (1 - (downtime * DOWNTIME_WEIGHT)) / 10000))
+  //     return {
+  //       address: operator_address,
+  //       moniker: description.moniker.substring(0, 20),
+  //       votingPower,
+  //       uptime: (1 - downtime) * 100,
+  //       score
+  //     }
+  //   }))
+  //   // sort result from highest to lowest score
+  //   result.filter(r => r.score > 0).sort((a, b) => b.score - a.score)
+  //   console.table(result)
+  // })()
+
+  // const { data: TerraValidators } = useTerraValidators()
+  // const { data: TerraValidator } = useTerraValidator(QUICK_STAKE_EXCLUDE_THRESHOLD)
+  // const { data: TerraProposal } = useTerraProposal(QUICK_STAKE_EXCLUDE_THRESHOLD)
+
+  // return (validator?: TerraValidator) => {
+  //   if (!validator) return
+  //   const { miss_counter } = validator
+  //   return miss_counter ? 1 - Number(miss_counter) / slash_window : undefined
+  // }
 }
+// export const useFindQuickStakeVals = () => {
+//   const { data: TerraValidators, ...state } = useTerraValidators()
+//   if (!TerraValidators) return
+
+//   const calcRate = getCalcVotingPowerRate(TerraValidators)
+//   // const calcUptime = getCalcUptime({ slash_window: 1200000 })
+//   let sumVotingPower = 0
+//   console.log("TerraValidators", TerraValidators)
+//   const valsByVotingPower = TerraValidators.map((v) => ({
+//     address: v.operator_address,
+//     uptime: v.miss_counter,
+//     votingPower: calcRate(v.operator_address) ?? 0 * 100,
+//   })).sort((a, b) => b.votingPower - a.votingPower)
+//   //       .forEach(v => {
+//   //   if (sumVotingPower >= QUICK_STAKE_EXCLUDE_THRESHOLD) return
+//   //   sumVotingPower += v.votingPower
+//   // });
+//   console.log("valsByVotingPower", valsByVotingPower)
+//   return { ...state, data: valsByVotingPower }
+// }

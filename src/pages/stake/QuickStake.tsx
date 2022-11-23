@@ -4,7 +4,6 @@ import styles from "./QuickStake.module.scss"
 import QuickStakeActionSelector from "./QuickStakeActionSelector"
 import StakeForm, { StakeAction } from "txs/stake/StakeForm"
 import { useDelegations, useValidators } from "data/queries/staking"
-import { useFindQuickStakeVals } from "data/Terra/TerraAPI"
 import { useBalances } from "data/queries/bank"
 import { combineState } from "data/query"
 import TxContext from "txs/TxContext"
@@ -25,6 +24,7 @@ const QuickStake = () => {
       balances,
       validators,
       delegations,
+      isQuickStake: true,
     }
     return <StakeForm {...props} />
   }
@@ -33,7 +33,6 @@ const QuickStake = () => {
   const { data: validators, ...validatorsState } = useValidators()
   const { data: delegations, ...delegationsState } = useDelegations()
   const state = combineState(balancesState, validatorsState, delegationsState)
-  const quickStakes = useFindQuickStakeVals()
 
   return (
     <>

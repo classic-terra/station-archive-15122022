@@ -16,7 +16,7 @@ import { getPlaceholder, toInput } from "../utils"
 import validate from "../validate"
 import InterchainTx from "../InterchainTx"
 import { getInitialGasDenom } from "../Tx"
-
+import { useCreateQuickStakeTx } from "data/Terra/TerraAPI"
 interface TxValues {
   source?: ValAddress
   input?: number
@@ -34,12 +34,16 @@ interface Props {
   balances: { denom: string; amount: string }[]
   validators: Validator[]
   delegations: Delegation[]
+  isQuickStake?: boolean
 }
 
 const StakeForm = (props: Props) => {
-  const { tab, destination, balances, validators, delegations } = props
+  const { tab, destination, balances, validators, delegations, isQuickStake } =
+    props
 
   const { t } = useTranslation()
+  const x = useCreateQuickStakeTx(100)
+  console.log("x", x)
   const address = useAddress()
   // @ts-expect-error
   const findMoniker = getFindMoniker(validators)
@@ -81,6 +85,11 @@ const StakeForm = (props: Props) => {
         if (!source) return
         const msg = new MsgBeginRedelegate(address, source, destination, coin)
         return { msgs: [msg], chainID: "phoenix-1" }
+      }
+
+      if (isQuickStake) {
+        const msgs = [new MsgDelegate(address, destination, coin)]
+        return { msgs, chainID: "phoenix-1" }
       }
 
       const msgs = {
@@ -128,7 +137,6 @@ const StakeForm = (props: Props) => {
     createTx,
     onChangeMax,
     onSuccess: {
-      //label: findMoniker(destination),
       path: `/validator/${destination}`,
     },
     queryKeys: [
