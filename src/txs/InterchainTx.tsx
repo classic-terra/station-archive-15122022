@@ -11,8 +11,8 @@ import { isNil } from "ramda"
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline"
 import { isDenom, readDenom } from "@terra.kitchen/utils"
-import { Coin, Coins, CreateTxOptions } from "@terra-money/station.js"
-import { Fee } from "@terra-money/station.js"
+import { Coin, Coins, CreateTxOptions } from "@terra-money/feather.js"
+import { Fee } from "@terra-money/feather.js"
 import { ConnectType, UserDenied } from "@terra-money/wallet-types"
 import { CreateTxFailed, TxFailed } from "@terra-money/wallet-types"
 import { useWallet, useConnectedWallet } from "@terra-money/use-wallet"
@@ -156,7 +156,9 @@ function InterchainTx<TxValues>(props: Props<TxValues>) {
   /* max */
   const getNativeMax = () => {
     if (!balance) return
-    return gasFee.denom === token ? gasFee.amount : "0"
+    return gasFee.denom === token
+      ? (Number(balance) - Number(gasFee.amount)).toFixed(0)
+      : balance
   }
 
   const max = !gasFee.amount

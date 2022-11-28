@@ -110,9 +110,9 @@ export const useUnbondings = () => {
   )
 }
 
-export const useStakingPool = () => {
-  const lcd = useLCDClient()
-  return useQuery([queryKey.staking.pool], () => lcd.staking.pool(), {
+export const useStakingPool = (chain: string) => {
+  const lcd = useInterchainLCDClient()
+  return useQuery([queryKey.staking.pool], () => lcd.staking.pool(chain), {
     ...RefetchOptions.INFINITY,
   })
 }
