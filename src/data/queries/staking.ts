@@ -1,8 +1,16 @@
 import { useQuery } from "react-query"
 import { flatten, path, uniqBy } from "ramda"
 import BigNumber from "bignumber.js"
-import { AccAddress, ValAddress, Validator } from "@terra-money/terra.js"
-import { Delegation, UnbondingDelegation } from "@terra-money/terra.js"
+import {
+  AccAddress,
+  MsgDelegate,
+  ValAddress,
+  Validator,
+  Coin,
+  UnbondingDelegation,
+  MsgUndelegate,
+  Delegation,
+} from "@terra-money/feather.js"
 /* FIXME(terra.js): Import from terra.js */
 import { BondStatus } from "@terra-money/terra.proto/cosmos/staking/v1beta1/staking"
 import { has } from "utils/num"
@@ -10,6 +18,7 @@ import { StakeAction } from "txs/stake/StakeForm"
 import { queryKey, Pagination, RefetchOptions } from "../query"
 import { useAddress } from "../wallet"
 import { useInterchainLCDClient, useLCDClient } from "./lcdClient"
+import shuffle from "utils/shuffle"
 
 export const useValidators = () => {
   const lcd = useLCDClient()
@@ -177,3 +186,108 @@ export const sumEntries = (entries: UnbondingDelegation.Entry[]) =>
   BigNumber.sum(
     ...entries.map(({ initial_balance }) => initial_balance.toString())
   ).toString()
+
+/* quick staking */
+
+export const getQuickStakeElgibleVals = async (chainID: string) => {
+  const MAX_COMMISSION = 0.1
+  const SLASH_WINDOW = 1_200_000
+  const VOTE_POWER_INCLUDE = 0.65
+
+  // eslint-disable-next-line
+  const lcd = useInterchainLCDClient()
+
+  const {
+    block: {
+      header: { height: latestHeight },
+    },
+  } = await lcd.tendermint.blockInfo(chainID)
+
+  const [Validators] = await lcd.staking.validators(chainID, { ...Pagination })
+
+  if (!Validators || !latestHeight) return
+
+  const totalTokens = BigNumber.sum(
+    ...Validators.map(({ tokens = 0 }) => Number(tokens))
+  ).toNumber()
+
+  const slashQueryParams = {
+    ...Pagination,
+    starting_height: Number(latestHeight) - SLASH_WINDOW,
+    ending_height: Number(latestHeight),
+  }
+
+  const vals = (
+    await Promise.all(
+      Validators.map(async (v) => {
+        const [, { total }] = await lcd.distribution.validatorSlashingEvents(
+          v.operator_address,
+          { ...slashQueryParams }
+        )
+        return {
+          ...v,
+          slashCount: Number(total),
+          votingPower: Number(v.tokens) / totalTokens,
+        }
+      })
+    )
+  )
+    .filter(
+      ({ commission, slashCount }) =>
+        Number(commission.commission_rates.rate) <= MAX_COMMISSION &&
+        slashCount === 0
+    )
+    .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
+    .reduce(
+      (acc, cur) => {
+        acc.sumVotePower += cur.votingPower
+        if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
+          acc.elgible.push(cur.operator_address)
+        }
+        return acc
+      },
+      {
+        sumVotePower: 0,
+        elgible: [] as ValAddress[],
+      }
+    )
+  return vals.elgible
+}
+
+export const getQuickStakeMsgs = async (
+  address: string,
+  amount: string,
+  chainID: string,
+  action: StakeAction.DELEGATE | StakeAction.UNBOND
+) => {
+  const elgible = await getQuickStakeElgibleVals(chainID)
+  if (!elgible) return null
+  const bnAmt = new BigNumber(amount)
+  const numOfValDests = bnAmt.isLessThan(100 * 10e6)
+    ? 1
+    : bnAmt.isLessThan(1000 * 10e6)
+    ? 2
+    : bnAmt.isLessThan(10000 * 10e6)
+    ? 3
+    : 4
+
+  const destVals = shuffle(elgible).slice(0, numOfValDests)
+
+  const StakeMsg = {
+    [StakeAction.DELEGATE]: MsgDelegate,
+    [StakeAction.UNBOND]: MsgUndelegate,
+  }[action]
+
+  const msgs = destVals.map((valDest) => {
+    return [
+      new StakeMsg(
+        address,
+        valDest,
+        new Coin("uluna", bnAmt.dividedToIntegerBy(destVals.length).toString())
+      ),
+    ]
+  })
+
+  console.log("msgs", msgs)
+  return msgs
+}

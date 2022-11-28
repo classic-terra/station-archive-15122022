@@ -1,6 +1,6 @@
 import { sha256 } from "@cosmjs/crypto"
 import { fromBase64, toHex, toBech32 } from "@cosmjs/encoding"
-import { ValConsPublicKey } from "@terra-money/station.js"
+import { ValConsPublicKey } from "@terra-money/feather.js"
 
 export class PubKey {
   private key

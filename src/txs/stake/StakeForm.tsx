@@ -1,10 +1,16 @@
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
-import { AccAddress, Coin, ValAddress } from "@terra-money/station.js"
-import { Delegation, Validator } from "@terra-money/station.js"
-import { MsgDelegate, MsgUndelegate } from "@terra-money/station.js"
-import { MsgBeginRedelegate } from "@terra-money/station.js"
+import {
+  MsgDelegate,
+  MsgUndelegate,
+  MsgBeginRedelegate,
+  Delegation,
+  Validator,
+  AccAddress,
+  Coin,
+  ValAddress,
+} from "@terra-money/feather.js"
 import { toAmount } from "@terra.kitchen/utils"
 import { getAmount } from "utils/coin"
 import { queryKey } from "data/query"
@@ -16,7 +22,8 @@ import { getPlaceholder, toInput } from "../utils"
 import validate from "../validate"
 import InterchainTx from "../InterchainTx"
 import { getInitialGasDenom } from "../Tx"
-import { useInterchainQuickStake } from "data/Terra/TerraAPI"
+import { getQuickStakeMsgs } from "data/queries/staking"
+
 interface TxValues {
   source?: ValAddress
   input?: number
@@ -50,9 +57,8 @@ const StakeForm = (props: Props) => {
   } = props
 
   const { t } = useTranslation()
-  useInterchainQuickStake(100, chainID)
   const address = useAddress()
-  // @ts-expect-error
+
   const findMoniker = getFindMoniker(validators)
 
   const delegationsOptions = delegations.filter(
@@ -95,8 +101,10 @@ const StakeForm = (props: Props) => {
       }
 
       if (isQuickStake) {
-        const msgs = [new MsgDelegate(address, destination, coin)]
-        return { msgs, chainID }
+        getQuickStakeMsgs(address, amount, chainID, tab).then((msgs) => ({
+          msgs,
+          chainID,
+        }))
       }
 
       const msgs = {
