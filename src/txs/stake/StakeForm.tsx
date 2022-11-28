@@ -35,7 +35,7 @@ interface Props {
   validators: Validator[]
   delegations: Delegation[]
   isQuickStake?: boolean
-  chainID?: InterchainId
+  chainID?: string
 }
 
 const StakeForm = (props: Props) => {

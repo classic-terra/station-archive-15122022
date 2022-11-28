@@ -149,6 +149,7 @@ const useInterchainAuth = () => {
 
     if (is.ledger(wallet)) {
       const key = await getLedgerKey()
+      // @ts-ignore
       return await key.createSignatureAmino(doc)
     } else {
       const pk = getKey(password)
@@ -163,6 +164,7 @@ const useInterchainAuth = () => {
 
     if (is.ledger(wallet)) {
       const key = await getLedgerKey()
+      // @ts-ignore
       const wallet = lcd.wallet(key)
       const { account_number: accountNumber, sequence } =
         await wallet.accountNumberAndSequence(txOptions.chainID)
@@ -174,6 +176,7 @@ const useInterchainAuth = () => {
         sequence,
         signMode,
       }
+      // @ts-ignore
       return await key.signTx(unsignedTx, options)
     } else if (is.preconfigured(wallet)) {
       const key = new MnemonicKey({ mnemonic: wallet.mnemonic })
@@ -209,6 +212,7 @@ const useInterchainAuth = () => {
   const post = async (txOptions: CreateTxOptions, password = "") => {
     if (!wallet) throw new Error("Wallet is not defined")
     const signedTx = await sign(txOptions, password)
+    // @ts-ignore
     const result = await lcd.tx.broadcastSync(signedTx, txOptions.chainID)
     if (isTxError(result)) throw new Error(result.raw_log)
     return result

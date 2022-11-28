@@ -10,7 +10,7 @@ import { useNetworks } from "app/InitNetworks"
 import { queryKey, RefetchOptions } from "../query"
 import { Pagination } from "../query"
 import { useInterchainLCDClient } from "data/queries/lcdClient"
-import { PubKey } from "utils/keys"
+// import { PubKey } from "utils/keys"
 
 export enum Aggregate {
   PERIODIC = "periodic",
@@ -169,7 +169,7 @@ export const useVotingPowerRate = (address: ValAddress) => {
 
 export const useInterchainQuickStake = async (
   amount: number,
-  chainID: InterchainId
+  chainID: string
 ) => {
   const MAX_COMMISSION = 0.1 // 0.1 = 10%
   const SLASH_WINDOW = 1_200_000
@@ -182,45 +182,34 @@ export const useInterchainQuickStake = async (
     },
   } = await lcd.tendermint.blockInfo(chainID)
 
-  const signInfoParams = {
-    ...Pagination,
-    starting_height: Number(latestHeight) - SLASH_WINDOW,
-    ending_height: Number(latestHeight),
-  }
+  const [Validators] = await lcd.staking.validators(chainID, { ...Pagination })
 
-  const [SigningInfos, [Validators]] = await Promise.all([
-    lcd.slashing.signingInfos(chainID, { ...signInfoParams }),
-    lcd.staking.validators(chainID, { ...Pagination }),
-  ])
-
-  if (!Validators || !SigningInfos || !latestHeight) return
-
-  // const { data: { slashes } }: { data: { slashes: any[] } } = await axios.get(`${LCD}/cosmos/distribution/v1beta1/validators/${operator_address}/slashes?starting_height=${lastBlockHeight - SLASH_WINDOW}&ending_height=${lastBlockHeight}`)
+  if (!Validators || !latestHeight) return
 
   const totalTokens = BigNumber.sum(
     ...Validators.map(({ tokens = 0 }) => Number(tokens))
   ).toNumber()
 
-  let vals = await Promise.all(
+  const slashQueryParams = {
+    ...Pagination,
+    starting_height: Number(latestHeight) - SLASH_WINDOW,
+    ending_height: Number(latestHeight),
+  }
+
+  let valInfo = await Promise.all(
     Validators.map(async (v) => {
-      const {
-        data: { slashes },
-      }: { data: { slashes: any[] } } = await axios.get(
-        `https://phoenix-lcd.terra.dev/cosmos/distribution/v1beta1/validators/${
-          v.operator_address
-        }/slashes?starting_height=${
-          Number(latestHeight) - SLASH_WINDOW
-        }&ending_height=${latestHeight}`
+      const [slashCount] = await lcd.distribution.validatorSlashingEvents(
+        v.operator_address,
+        { ...slashQueryParams }
       )
-      const consAddress = new PubKey(v.consensus_pubkey).toBech32()
       return {
         ...v,
-        ...SigningInfos.find((si) => si.address === consAddress),
-        slashes,
+        ...slashCount,
         votingPower: Number(v.tokens) / totalTokens,
       }
     })
   )
+  let { elgible } = valInfo
     .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
     .reduce(
       (acc, cur) => {
@@ -235,60 +224,67 @@ export const useInterchainQuickStake = async (
         elgible: [] as any[], // todo: fix type
       }
     )
-  console.log("vals.elgible", vals.elgible)
 
-  //  vals.elgible = vals.elgible.filter(({ commission }) => parseFloat(commission.commission_rates.rate) <= MAX_COMMISSION)
+  elgible = elgible.filter(
+    ({ commission }) =>
+      parseFloat(commission.commission_rates.rate) <= MAX_COMMISSION
+  )
 
-  // ; (async () => {
-  //   // fetch validators list
-  //   let { data: { validators } }: { data: { validators: Validator[] } } = await axios.get(`${LCD}/cosmos/staking/v1beta1/validators?pagination.limit=1000`)
-  //   const { data: { block: lastBlock } } = await axios.get(`${LCD}/blocks/latest`)
-  //   const lastBlockHeight = parseInt(lastBlock.header.height)
-  //   console.log(`Last block height: ${lastBlockHeight}`)
-  //   // remove jailed or unbonded validators
-  //   validators = validators.filter(({ jailed, status }) => !jailed && status === 'BOND_STATUS_BONDED')
-  //   // sort from highest to lowest voting power
-  //   validators.sort((a, b) => parseInt(b.tokens) - parseInt(a.tokens))
-  //   // save the voting power of the top validator
-  //   const topVotingPower = parseInt(validators[0].tokens) / 1e6
-  //   // remove the top EXCLUDE_TOP
-  //   validators.splice(0, EXCLUDE_TOP)
-  //   // remove validators with commission > MAX_COMMISSION
-  //   validators = validators.filter(({ commission }) => parseFloat(commission.commission_rates.rate) <= MAX_COMMISSION)
-
-  //   const result = await Promise.all(validators.map(async ({ operator_address, consensus_pubkey, tokens, description }) => {
-  //     const consAddress = new PubKey(consensus_pubkey).toBech32()
-  //     const missedBlocks = parseInt(signingInfo.find(({ address }) => address === consAddress)?.missed_blocks_counter || '0')
-  //     // TODO: is missedBlocks on the latest 10k block or slashing window?
-  //     const downtime = (missedBlocks / 10_000)
-  //     const votingPower = Math.round(parseInt(tokens) / 1e6)
-  //     // fetch slash events
-  //     const { data: { slashes } }: { data: { slashes: any[] } } = await axios.get(`${LCD}/cosmos/distribution/v1beta1/validators/${operator_address}/slashes?starting_height=${lastBlockHeight - SLASH_WINDOW}&ending_height=${lastBlockHeight}`)
-  //     // TODO: fetch governance & slashing
-  //     const score = slashes.length ? 0 : Math.round(((topVotingPower - votingPower) * (1 - (downtime * DOWNTIME_WEIGHT)) / 10000))
-  //     return {
-  //       address: operator_address,
-  //       moniker: description.moniker.substring(0, 20),
-  //       votingPower,
-  //       uptime: (1 - downtime) * 100,
-  //       score
-  //     }
-  //   }))
-  //   // sort result from highest to lowest score
-  //   result.filter(r => r.score > 0).sort((a, b) => b.score - a.score)
-  //   console.table(result)
-  // })()
-
-  // const { data: TerraValidators } = useTerraValidators()
-  // const { data: TerraValidator } = useTerraValidator(QUICK_STAKE_EXCLUDE_THRESHOLD)
-  // const { data: TerraProposal } = useTerraProposal(QUICK_STAKE_EXCLUDE_THRESHOLD)
-
-  // return (validator?: TerraValidator) => {
-  //   if (!validator) return
-  //   const { miss_counter } = validator
-  //   return miss_counter ? 1 - Number(miss_counter) / slash_window : undefined
-  // }
+  if (amount / 10e6) {
+    return elgible
+  }
 }
+
+// ; (async () => {
+//   // fetch validators list
+//   let { data: { validators } }: { data: { validators: Validator[] } } = await axios.get(`${LCD}/cosmos/staking/v1beta1/validators?pagination.limit=1000`)
+//   const { data: { block: lastBlock } } = await axios.get(`${LCD}/blocks/latest`)
+//   const lastBlockHeight = parseInt(lastBlock.header.height)
+//   console.log(`Last block height: ${lastBlockHeight}`)
+//   // remove jailed or unbonded validators
+//   validators = validators.filter(({ jailed, status }) => !jailed && status === 'BOND_STATUS_BONDED')
+//   // sort from highest to lowest voting power
+//   validators.sort((a, b) => parseInt(b.tokens) - parseInt(a.tokens))
+//   // save the voting power of the top validator
+//   const topVotingPower = parseInt(validators[0].tokens) / 1e6
+//   // remove the top EXCLUDE_TOP
+//   validators.splice(0, EXCLUDE_TOP)
+//   // remove validators with commission > MAX_COMMISSION
+//   validators = validators.filter(({ commission }) => parseFloat(commission.commission_rates.rate) <= MAX_COMMISSION)
+
+//   const result = await Promise.all(validators.map(async ({ operator_address, consensus_pubkey, tokens, description }) => {
+//     const consAddress = new PubKey(consensus_pubkey).toBech32()
+//     const missedBlocks = parseInt(signingInfo.find(({ address }) => address === consAddress)?.missed_blocks_counter || '0')
+//     // TODO: is missedBlocks on the latest 10k block or slashing window?
+//     const downtime = (missedBlocks / 10_000)
+//     const votingPower = Math.round(parseInt(tokens) / 1e6)
+//     // fetch slash events
+//     const { data: { slashes } }: { data: { slashes: any[] } } = await axios.get(`${LCD}/cosmos/distribution/v1beta1/validators/${operator_address}/slashes?starting_height=${lastBlockHeight - SLASH_WINDOW}&ending_height=${lastBlockHeight}`)
+//     // TODO: fetch governance & slashing
+//     const score = slashes.length ? 0 : Math.round(((topVotingPower - votingPower) * (1 - (downtime * DOWNTIME_WEIGHT)) / 10000))
+//     return {
+//       address: operator_address,
+//       moniker: description.moniker.substring(0, 20),
+//       votingPower,
+//       uptime: (1 - downtime) * 100,
+//       score
+//     }
+//   }))
+//   // sort result from highest to lowest score
+//   result.filter(r => r.score > 0).sort((a, b) => b.score - a.score)
+//   console.table(result)
+// })()
+
+// const { data: TerraValidators } = useTerraValidators()
+// const { data: TerraValidator } = useTerraValidator(QUICK_STAKE_EXCLUDE_THRESHOLD)
+// const { data: TerraProposal } = useTerraProposal(QUICK_STAKE_EXCLUDE_THRESHOLD)
+
+// return (validator?: TerraValidator) => {
+//   if (!validator) return
+//   const { miss_counter } = validator
+//   return miss_counter ? 1 - Number(miss_counter) / slash_window : undefined
+// }
+
 // export const useFindQuickStakeVals = () => {
 //   const { data: TerraValidators, ...state } = useTerraValidators()
 //   if (!TerraValidators) return
@@ -308,4 +304,3 @@ export const useInterchainQuickStake = async (
 //   // });
 //   console.log("valsByVotingPower", valsByVotingPower)
 //   return { ...state, data: valsByVotingPower }
-// }
