@@ -54,7 +54,7 @@ export const useValidators = () => {
 export const useInterchainValidators = (chain: string) => {
   const lcd = useInterchainLCDClient()
   return useQuery(
-    [queryKey.staking.validators],
+    [queryKey.staking.interchainValidators, chain],
     async () => {
       const [Validators] = await lcd.staking.validators(chain, {
         ...Pagination,
@@ -63,6 +63,45 @@ export const useInterchainValidators = (chain: string) => {
     },
     { ...RefetchOptions.INFINITY }
   )
+}
+
+export const useQuickStakeElgibleVals = (chainID: string) => {
+  const MAX_COMMISSION = 0.05
+  const VOTE_POWER_INCLUDE = 0.65
+  const { data: latestHeight } = useLatestBlock(chainID)
+  const { data: validators } = useInterchainValidators(chainID)
+
+  if (!validators || !latestHeight) return
+  const totalStaked = getTotalStakedTokens(validators)
+  const vals = validators
+    .map((v) => {
+      // const { data: slashCount } = useValidatorSlashCount(v.operator_address, latestHeight)
+      return {
+        ...v,
+        slashCount: 0, // TODO: query slash count from distribution
+        votingPower: Number(v.tokens) / totalStaked,
+      }
+    })
+    .filter(
+      ({ commission, slashCount }) =>
+        Number(commission.commission_rates.rate) <= MAX_COMMISSION &&
+        slashCount === 0
+    )
+    .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
+    .reduce(
+      (acc, cur) => {
+        acc.sumVotePower += cur.votingPower
+        if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
+          acc.elgible.push(cur.operator_address)
+        }
+        return acc
+      },
+      {
+        sumVotePower: 0,
+        elgible: [] as ValAddress[],
+      }
+    )
+  return vals.elgible
 }
 
 export const useValidator = (operatorAddress: ValAddress) => {
@@ -149,6 +188,12 @@ export const getFindValidator = (validators: Validator[]) => {
     return validator
   }
 }
+export const getTotalStakedTokens = (validators: Validator[]) => {
+  const total = BigNumber.sum(
+    ...validators.map(({ tokens = 0 }) => Number(tokens))
+  ).toNumber()
+  return total
+}
 
 export const getFindMoniker = (validators: Validator[]) => {
   return (address: AccAddress) => {
@@ -202,49 +247,7 @@ export const sumEntries = (entries: UnbondingDelegation.Entry[]) =>
     ...entries.map(({ initial_balance }) => initial_balance.toString())
   ).toString()
 
-/* quick staking */
-export const useQuickStakeElgibleVals = (chainID: string) => {
-  const MAX_COMMISSION = 0.05
-  const VOTE_POWER_INCLUDE = 0.65
-  const { data: latestHeight } = useLatestBlock(chainID)
-  const { data: Validators } = useInterchainValidators(chainID)
-
-  if (!Validators || !latestHeight) return
-
-  const totalTokens = BigNumber.sum(
-    ...Validators.map(({ tokens = 0 }) => Number(tokens))
-  ).toNumber()
-
-  const vals = Validators.map((v) => {
-    // const { data: slashCount } = useValidatorSlashCount(v.operator_address, latestHeight)
-    return {
-      ...v,
-      slashCount: 0,
-      votingPower: Number(v.tokens) / totalTokens,
-    }
-  })
-    .filter(
-      ({ commission, slashCount }) =>
-        Number(commission.commission_rates.rate) <= MAX_COMMISSION &&
-        slashCount === 0
-    )
-    .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
-    .reduce(
-      (acc, cur) => {
-        acc.sumVotePower += cur.votingPower
-        if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
-          acc.elgible.push(cur.operator_address)
-        }
-        return acc
-      },
-      {
-        sumVotePower: 0,
-        elgible: [] as ValAddress[],
-      }
-    )
-  return vals.elgible
-}
-
+/* quick staking helpers */
 export const getQuickStakeMsgs = (
   address: string,
   amount: string,
@@ -272,11 +275,15 @@ export const getQuickStakeMsgs = (
   return msgs
 }
 
+//  choose random val and undelegate amount and if not matchign amount add next random validator until remainder of desired stake is met
+
 export const getQuickUnstakeMsgs = (
   address: string,
   amount: string,
   delegations: Delegation[]
 ) => {
+  console.log("amount", amount)
+  console.log("delegations", delegations)
   const bnAmt = new BigNumber(amount)
   return bnAmt
 }

@@ -20,7 +20,6 @@ import { Grid } from "components/layout"
 import { Form, FormItem, FormWarning, Input, Select } from "components/form"
 import { getPlaceholder, toInput } from "../utils"
 import validate from "../validate"
-// import InterchainTx from "../InterchainTx"
 import Tx, { getInitialGasDenom } from "../Tx"
 
 interface TxValues {

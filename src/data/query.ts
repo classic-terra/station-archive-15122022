@@ -71,10 +71,12 @@ export const queryKey = mirror({
     params: "",
     supportedFiat: "",
   },
-  tendermint: { nodeInfo: "" },
+  tendermint: { nodeInfo: "", blockInfo: "" },
   staking: {
     validators: "",
     validator: "",
+    interchainValidators: "",
+    quickStakeValidators: "",
     delegations: "",
     delegation: "",
     unbondings: "",

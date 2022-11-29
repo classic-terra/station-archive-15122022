@@ -20,7 +20,7 @@ export const useNodeInfo = () => {
 export const useLatestBlock = (chain: string) => {
   const lcd = useInterchainLCDClient()
   return useQuery(
-    [queryKey.staking.unbondings, chain],
+    [queryKey.tendermint.blockInfo, chain],
     async () => {
       const {
         block: {

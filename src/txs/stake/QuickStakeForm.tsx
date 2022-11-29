@@ -1,12 +1,7 @@
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
-import {
-  AccAddress,
-  Coin,
-  ValAddress,
-  Delegation,
-} from "@terra-money/feather.js"
+import { ValAddress, Delegation } from "@terra-money/feather.js"
 import { toAmount } from "@terra.kitchen/utils"
 import { getAmount } from "utils/coin"
 import { queryKey } from "data/query"
@@ -17,7 +12,11 @@ import { getPlaceholder, toInput } from "../utils"
 import validate from "../validate"
 import InterchainTx from "../InterchainTx"
 import { getInitialGasDenom } from "../Tx"
-import { calcDelegationsTotal, getQuickStakeMsgs } from "data/queries/staking"
+import {
+  calcDelegationsTotal,
+  getQuickStakeMsgs,
+  getQuickUnstakeMsgs,
+} from "data/queries/staking"
 
 interface TxValues {
   input?: number
@@ -56,19 +55,27 @@ const QuickStakeForm = (props: Props) => {
   const { errors } = formState
   const { input } = watch()
   const amount = toAmount(input)
+  console.log("amount", amount)
 
   /* tx */
   const createTx = useCallback(
     ({ input }: TxValues) => {
       if (!address) return
       const amount = toAmount(input)
+      console.log("amount", typeof amount)
+      const msgs = getQuickStakeMsgs(address, amount, destinations)
 
       if (tab === QuickStakeAction.DELEGATE) {
         const msgs = getQuickStakeMsgs(address, amount, destinations)
+      }
+
+      if (tab === QuickStakeAction.UNBOND) {
+        getQuickUnstakeMsgs(address, amount, delegations)
         return { msgs, chainID }
       }
+      return { msgs, chainID }
     },
-    [address, destinations, tab]
+    [address, tab]
   )
 
   /* fee */
@@ -80,7 +87,6 @@ const QuickStakeForm = (props: Props) => {
   const estimationTxValues = useMemo(() => {
     return {
       input: toInput(2),
-      // to check redelegation stacks
     }
   }, [tab])
 
@@ -102,14 +108,9 @@ const QuickStakeForm = (props: Props) => {
     estimationTxValues,
     createTx,
     onChangeMax,
-    queryKeys: [
-      queryKey.staking.delegations,
-      queryKey.staking.unbondings,
-      queryKey.distribution.rewards,
-    ],
+    queryKeys: [queryKey.staking.delegations, queryKey.staking.unbondings],
     chain: chainID,
   }
-  if (!destinations || !balances || !delegations || !chainID) return null
 
   return (
     <InterchainTx {...tx}>
