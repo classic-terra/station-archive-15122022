@@ -17,6 +17,8 @@ import { has } from "utils/num"
 import { StakeAction } from "txs/stake/StakeForm"
 import { queryKey, Pagination, RefetchOptions } from "../query"
 import { useAddress } from "../wallet"
+import { useValidatorSlashCount } from "./distribution"
+import { useLatestBlock } from "./tendermint"
 import { useInterchainLCDClient, useLCDClient } from "./lcdClient"
 import shuffle from "utils/shuffle"
 
@@ -45,6 +47,20 @@ export const useValidators = () => {
       })
 
       return uniqBy(path(["operator_address"]), [...v1, ...v2, ...v3])
+    },
+    { ...RefetchOptions.INFINITY }
+  )
+}
+
+export const useInterchainValidators = (chain: string) => {
+  const lcd = useInterchainLCDClient()
+  return useQuery(
+    [queryKey.staking.validators],
+    async () => {
+      const [Validators] = await lcd.staking.validators(chain, {
+        ...Pagination,
+      })
+      return Validators
     },
     { ...RefetchOptions.INFINITY }
   )
@@ -188,22 +204,11 @@ export const sumEntries = (entries: UnbondingDelegation.Entry[]) =>
   ).toString()
 
 /* quick staking */
-
-export const getQuickStakeElgibleVals = async (chainID: string) => {
-  const MAX_COMMISSION = 0.1
-  const SLASH_WINDOW = 1_200_000
+export const useQuickStakeElgibleVals = (chainID: string) => {
+  const MAX_COMMISSION = 0.05
   const VOTE_POWER_INCLUDE = 0.65
-
-  // eslint-disable-next-line
-  const lcd = useInterchainLCDClient()
-
-  const {
-    block: {
-      header: { height: latestHeight },
-    },
-  } = await lcd.tendermint.blockInfo(chainID)
-
-  const [Validators] = await lcd.staking.validators(chainID, { ...Pagination })
+  const { data: latestHeight } = useLatestBlock(chainID)
+  const { data: Validators } = useInterchainValidators(chainID)
 
   if (!Validators || !latestHeight) return
 
@@ -211,27 +216,14 @@ export const getQuickStakeElgibleVals = async (chainID: string) => {
     ...Validators.map(({ tokens = 0 }) => Number(tokens))
   ).toNumber()
 
-  const slashQueryParams = {
-    ...Pagination,
-    starting_height: Number(latestHeight) - SLASH_WINDOW,
-    ending_height: Number(latestHeight),
-  }
-
-  const vals = (
-    await Promise.all(
-      Validators.map(async (v) => {
-        const [, { total }] = await lcd.distribution.validatorSlashingEvents(
-          v.operator_address,
-          { ...slashQueryParams }
-        )
-        return {
-          ...v,
-          slashCount: Number(total),
-          votingPower: Number(v.tokens) / totalTokens,
-        }
-      })
-    )
-  )
+  const vals = Validators.map((v) => {
+    // const { data: slashCount } = useValidatorSlashCount(v.operator_address, latestHeight)
+    return {
+      ...v,
+      slashCount: 0,
+      votingPower: Number(v.tokens) / totalTokens,
+    }
+  })
     .filter(
       ({ commission, slashCount }) =>
         Number(commission.commission_rates.rate) <= MAX_COMMISSION &&
@@ -254,40 +246,40 @@ export const getQuickStakeElgibleVals = async (chainID: string) => {
   return vals.elgible
 }
 
-export const getQuickStakeMsgs = async (
+export const getQuickStakeMsgs = (
   address: string,
   amount: string,
   chainID: string,
-  action: StakeAction.DELEGATE | StakeAction.UNBOND
+  elgibleVals: ValAddress[],
+  action: StakeAction
 ) => {
-  const elgible = await getQuickStakeElgibleVals(chainID)
-  if (!elgible) return null
   const bnAmt = new BigNumber(amount)
-  const numOfValDests = bnAmt.isLessThan(100 * 10e6)
-    ? 1
-    : bnAmt.isLessThan(1000 * 10e6)
-    ? 2
-    : bnAmt.isLessThan(10000 * 10e6)
-    ? 3
-    : 4
 
-  const destVals = shuffle(elgible).slice(0, numOfValDests)
+  if (action === StakeAction.DELEGATE) {
+    if (!elgibleVals) return null
+    const numOfValDests = bnAmt.isLessThan(100 * 10e6)
+      ? 1
+      : bnAmt.isLessThan(1000 * 10e6)
+      ? 2
+      : bnAmt.isLessThan(10000 * 10e6)
+      ? 3
+      : 4
 
-  const StakeMsg = {
-    [StakeAction.DELEGATE]: MsgDelegate,
-    [StakeAction.UNBOND]: MsgUndelegate,
-  }[action]
+    const destVals = shuffle(elgibleVals).slice(0, numOfValDests)
 
-  const msgs = destVals.map((valDest) => {
-    return [
-      new StakeMsg(
+    return destVals.map((valDest) => [
+      new MsgDelegate(
         address,
         valDest,
         new Coin("uluna", bnAmt.dividedToIntegerBy(destVals.length).toString())
       ),
-    ]
-  })
-
-  console.log("msgs", msgs)
-  return msgs
+    ])
+    // } else if (action === StakeAction.UNBOND) {
+    //   return new MsgUndelegate(
+    //       address,
+    //       'sss',
+    //       new Coin("uluna", bnAmt.toString())
+    //   )
+    // }
+  }
 }

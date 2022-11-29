@@ -7,6 +7,7 @@ import { queryKey, RefetchOptions } from "../query"
 import { useAddress } from "../wallet"
 import { useInterchainLCDClient, useLCDClient } from "./lcdClient"
 import { CalcValue } from "./coingecko"
+import { Pagination } from "../query"
 
 export const useRewards = () => {
   const address = useAddress()
@@ -28,6 +29,37 @@ export const useCommunityPool = (chain: string) => {
   return useQuery(
     [queryKey.distribution.communityPool, chain],
     () => lcd.distribution.communityPool(chain),
+    { ...RefetchOptions.INFINITY }
+  )
+}
+
+/* slashing */
+export const useValidatorSlashCount = (
+  operatorAddress: ValAddress,
+  latestHeight: string
+) => {
+  const lcd = useInterchainLCDClient()
+  const SLASH_WINDOW = 1_200_000 // used for quick stake elgibility
+
+  const slashQueryParams = {
+    ...Pagination,
+    ...(latestHeight
+      ? {
+          starting_height: Number(latestHeight) - SLASH_WINDOW,
+          ending_height: Number(latestHeight),
+        }
+      : {}),
+  }
+
+  return useQuery(
+    [queryKey.distribution.validatorSlashingEvents, operatorAddress],
+    async () => {
+      const [, { total }] = await lcd.distribution.validatorSlashingEvents(
+        operatorAddress,
+        { ...slashQueryParams }
+      )
+      return total
+    },
     { ...RefetchOptions.INFINITY }
   )
 }

@@ -28,7 +28,6 @@ interface TxValues {
   source?: ValAddress
   input?: number
 }
-
 export enum StakeAction {
   DELEGATE = "delegate",
   REDELEGATE = "redelegate",
@@ -37,12 +36,12 @@ export enum StakeAction {
 
 interface Props {
   tab: StakeAction
-  destination: ValAddress
   balances: { denom: string; amount: string }[]
   validators: Validator[]
   delegations: Delegation[]
-  isQuickStake?: boolean
-  chainID?: string
+  chain: string
+  destination: ValAddress
+  quickStakeDestinations?: ValAddress[]
 }
 
 const StakeForm = (props: Props) => {
@@ -52,8 +51,8 @@ const StakeForm = (props: Props) => {
     balances,
     validators,
     delegations,
-    isQuickStake,
-    chainID = "phoenix-1",
+    chain = "",
+    quickStakeDestinations,
   } = props
 
   const { t } = useTranslation()
@@ -94,17 +93,22 @@ const StakeForm = (props: Props) => {
       const amount = toAmount(input)
       const coin = new Coin("uluna", amount)
 
+      if (quickStakeDestinations) {
+        const msgs = getQuickStakeMsgs(
+          address,
+          amount,
+          chain,
+          quickStakeDestinations,
+          tab
+        )
+        return { msgs, chainID: chain }
+      }
+      if (!destination) return
+
       if (tab === StakeAction.REDELEGATE) {
         if (!source) return
         const msg = new MsgBeginRedelegate(address, source, destination, coin)
-        return { msgs: [msg], chainID }
-      }
-
-      if (isQuickStake) {
-        getQuickStakeMsgs(address, amount, chainID, tab).then((msgs) => ({
-          msgs,
-          chainID,
-        }))
+        return { msgs: [msg], chainID: chain }
       }
 
       const msgs = {
@@ -112,9 +116,9 @@ const StakeForm = (props: Props) => {
         [StakeAction.UNBOND]: [new MsgUndelegate(address, destination, coin)],
       }[tab]
 
-      return { msgs, chainID }
+      return { msgs, chainID: chain }
     },
-    [address, destination, tab, chainID, isQuickStake]
+    [address, destination, tab, chain]
   )
 
   /* fee */
@@ -159,7 +163,7 @@ const StakeForm = (props: Props) => {
       queryKey.staking.unbondings,
       queryKey.distribution.rewards,
     ],
-    chain: "phoenix-1",
+    chain,
   }
 
   return (

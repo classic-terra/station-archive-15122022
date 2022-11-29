@@ -2,6 +2,7 @@ import { useQuery } from "react-query"
 import axios from "axios"
 import { useNetwork } from "data/wallet"
 import { queryKey, RefetchOptions } from "../query"
+import { useInterchainLCDClient } from "./lcdClient"
 
 export const useNodeInfo = () => {
   const { lcd } = useNetwork()
@@ -13,5 +14,21 @@ export const useNodeInfo = () => {
       return data
     },
     { ...RefetchOptions.INFINITY }
+  )
+}
+
+export const useLatestBlock = (chain: string) => {
+  const lcd = useInterchainLCDClient()
+  return useQuery(
+    [queryKey.staking.unbondings, chain],
+    async () => {
+      const {
+        block: {
+          header: { height: latestHeight },
+        },
+      } = await lcd.tendermint.blockInfo(chain)
+      return latestHeight
+    },
+    { ...RefetchOptions.DEFAULT }
   )
 }

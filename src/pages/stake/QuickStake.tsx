@@ -1,25 +1,40 @@
 // import styles from "./QuickStake.module.scss"
 import QuickStakeActionSelector from "./QuickStakeActionSelector"
 import StakeForm, { StakeAction } from "txs/stake/StakeForm"
-import { useDelegations, useValidators } from "data/queries/staking"
+import {
+  useDelegations,
+  useQuickStakeElgibleVals,
+  useValidators,
+} from "data/queries/staking"
 import { useBalances } from "data/queries/bank"
 import TxContext from "txs/TxContext"
 import { Card, ChainFilter, Page } from "components/layout"
 
 const QuickStake = () => {
-  const destination = "terravaloper1q8w4u2wyhx574m70gwe8km5za2ptanny9mnqy3"
-
-  const renderQuickStakeForm = (chainID: string, action: StakeAction) => {
-    if (!(balances && validators && delegations && chainID && action))
+  const renderQuickStakeForm = (
+    chain: string | undefined,
+    action: StakeAction
+  ) => {
+    if (
+      !(
+        balances &&
+        validators &&
+        delegations &&
+        chain &&
+        action &&
+        quickStakeDesinations &&
+        chain
+      )
+    )
       return null
     const props = {
       tab: action,
-      destination,
+      quickStakeDesinations,
       balances,
       validators,
+      destination: quickStakeDesinations[0], //TODO: find workaround for this
       delegations,
-      isQuickStake: true,
-      chainID,
+      chain,
     }
     return <StakeForm {...props} />
   }
@@ -27,15 +42,16 @@ const QuickStake = () => {
   const { data: balances } = useBalances()
   const { data: validators } = useValidators()
   const { data: delegations } = useDelegations()
+  const quickStakeDesinations = useQuickStakeElgibleVals("phoenix-1")
 
   return (
     <Page>
       <QuickStakeActionSelector>
         {(action) => (
           <ChainFilter>
-            {(chainID) => (
+            {(chain) => (
               <Card>
-                <TxContext>{renderQuickStakeForm(chainID!, action)}</TxContext>
+                <TxContext>{renderQuickStakeForm(chain, action)}</TxContext>
               </Card>
             )}
           </ChainFilter>

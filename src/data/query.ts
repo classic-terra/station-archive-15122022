@@ -50,6 +50,7 @@ export const queryKey = mirror({
     communityPool: "",
     validatorCommission: "",
     withdrawAddress: "",
+    validatorSlashingEvents: "",
   },
   gov: {
     votingParams: "",
@@ -61,6 +62,7 @@ export const queryKey = mirror({
     votes: "",
     tally: "",
   },
+  tenderming: { blockInfo: "" },
   ibc: { denomTrace: "" },
   market: { params: "" },
   coingecko: {
