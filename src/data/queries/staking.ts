@@ -8,7 +8,6 @@ import {
   Validator,
   Coin,
   UnbondingDelegation,
-  MsgUndelegate,
   Delegation,
 } from "@terra-money/feather.js"
 /* FIXME(terra.js): Import from terra.js */
@@ -17,7 +16,7 @@ import { has } from "utils/num"
 import { StakeAction } from "txs/stake/StakeForm"
 import { queryKey, Pagination, RefetchOptions } from "../query"
 import { useAddress } from "../wallet"
-import { useValidatorSlashCount } from "./distribution"
+// import { useValidatorSlashCount } from "./distribution"
 import { useLatestBlock } from "./tendermint"
 import { useInterchainLCDClient, useLCDClient } from "./lcdClient"
 import shuffle from "utils/shuffle"
@@ -249,37 +248,35 @@ export const useQuickStakeElgibleVals = (chainID: string) => {
 export const getQuickStakeMsgs = (
   address: string,
   amount: string,
-  chainID: string,
-  elgibleVals: ValAddress[],
-  action: StakeAction
+  elgibleVals: ValAddress[]
 ) => {
   const bnAmt = new BigNumber(amount)
+  const numOfValDests = bnAmt.isLessThan(100 * 10e6)
+    ? 1
+    : bnAmt.isLessThan(1000 * 10e6)
+    ? 2
+    : bnAmt.isLessThan(10000 * 10e6)
+    ? 3
+    : 4
 
-  if (action === StakeAction.DELEGATE) {
-    if (!elgibleVals) return null
-    const numOfValDests = bnAmt.isLessThan(100 * 10e6)
-      ? 1
-      : bnAmt.isLessThan(1000 * 10e6)
-      ? 2
-      : bnAmt.isLessThan(10000 * 10e6)
-      ? 3
-      : 4
+  const destVals = shuffle(elgibleVals).slice(0, numOfValDests)
 
-    const destVals = shuffle(elgibleVals).slice(0, numOfValDests)
-
-    return destVals.map((valDest) => [
+  const msgs = destVals.map(
+    (valDest) =>
       new MsgDelegate(
         address,
         valDest,
         new Coin("uluna", bnAmt.dividedToIntegerBy(destVals.length).toString())
-      ),
-    ])
-    // } else if (action === StakeAction.UNBOND) {
-    //   return new MsgUndelegate(
-    //       address,
-    //       'sss',
-    //       new Coin("uluna", bnAmt.toString())
-    //   )
-    // }
-  }
+      )
+  )
+  return msgs
+}
+
+export const getQuickUnstakeMsgs = (
+  address: string,
+  amount: string,
+  delegations: Delegation[]
+) => {
+  const bnAmt = new BigNumber(amount)
+  return bnAmt
 }

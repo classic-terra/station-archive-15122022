@@ -2,14 +2,14 @@ import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
 import {
-  MsgDelegate,
-  MsgUndelegate,
   MsgBeginRedelegate,
-  Delegation,
-  Validator,
   AccAddress,
   Coin,
   ValAddress,
+  Delegation,
+  Validator,
+  MsgDelegate,
+  MsgUndelegate,
 } from "@terra-money/feather.js"
 import { toAmount } from "@terra.kitchen/utils"
 import { getAmount } from "utils/coin"
@@ -20,14 +20,14 @@ import { Grid } from "components/layout"
 import { Form, FormItem, FormWarning, Input, Select } from "components/form"
 import { getPlaceholder, toInput } from "../utils"
 import validate from "../validate"
-import InterchainTx from "../InterchainTx"
-import { getInitialGasDenom } from "../Tx"
-import { getQuickStakeMsgs } from "data/queries/staking"
+// import InterchainTx from "../InterchainTx"
+import Tx, { getInitialGasDenom } from "../Tx"
 
 interface TxValues {
   source?: ValAddress
   input?: number
 }
+
 export enum StakeAction {
   DELEGATE = "delegate",
   REDELEGATE = "redelegate",
@@ -36,28 +36,18 @@ export enum StakeAction {
 
 interface Props {
   tab: StakeAction
+  destination: ValAddress
   balances: { denom: string; amount: string }[]
   validators: Validator[]
   delegations: Delegation[]
-  chain: string
-  destination: ValAddress
-  quickStakeDestinations?: ValAddress[]
+  chainID?: string
 }
 
 const StakeForm = (props: Props) => {
-  const {
-    tab,
-    destination,
-    balances,
-    validators,
-    delegations,
-    chain = "",
-    quickStakeDestinations,
-  } = props
+  const { tab, destination, balances, validators, delegations, chainID } = props
 
   const { t } = useTranslation()
   const address = useAddress()
-
   const findMoniker = getFindMoniker(validators)
 
   const delegationsOptions = delegations.filter(
@@ -93,22 +83,10 @@ const StakeForm = (props: Props) => {
       const amount = toAmount(input)
       const coin = new Coin("uluna", amount)
 
-      if (quickStakeDestinations) {
-        const msgs = getQuickStakeMsgs(
-          address,
-          amount,
-          chain,
-          quickStakeDestinations,
-          tab
-        )
-        return { msgs, chainID: chain }
-      }
-      if (!destination) return
-
       if (tab === StakeAction.REDELEGATE) {
         if (!source) return
         const msg = new MsgBeginRedelegate(address, source, destination, coin)
-        return { msgs: [msg], chainID: chain }
+        return { msgs: [msg], chainID }
       }
 
       const msgs = {
@@ -116,9 +94,9 @@ const StakeForm = (props: Props) => {
         [StakeAction.UNBOND]: [new MsgUndelegate(address, destination, coin)],
       }[tab]
 
-      return { msgs, chainID: chain }
+      return { msgs, chainID }
     },
-    [address, destination, tab, chain]
+    [address, destination, tab, chainID]
   )
 
   /* fee */
@@ -163,11 +141,11 @@ const StakeForm = (props: Props) => {
       queryKey.staking.unbondings,
       queryKey.distribution.rewards,
     ],
-    chain,
+    chain: "phoenix-1",
   }
 
   return (
-    <InterchainTx {...tx}>
+    <Tx {...tx}>
       {({ max, fee, submit }) => (
         <Form onSubmit={handleSubmit(submit.fn)}>
           {
@@ -248,7 +226,7 @@ const StakeForm = (props: Props) => {
           {submit.button}
         </Form>
       )}
-    </InterchainTx>
+    </Tx>
   )
 }
 

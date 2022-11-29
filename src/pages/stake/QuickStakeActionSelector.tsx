@@ -2,17 +2,17 @@ import { useTranslation } from "react-i18next"
 import { useState } from "react"
 import styles from "./QuickStakeActionSelector.module.scss"
 import { capitalize } from "@mui/material"
-import { StakeAction } from "txs/stake/StakeForm"
+import { QuickStakeAction } from "txs/stake/QuickStakeForm"
 
 export interface Props {
-  children: (action: StakeAction) => React.ReactNode
+  children: (action: QuickStakeAction) => React.ReactNode
 }
 
 const QuickStakeActionSelector = (props: Props) => {
   const { children } = props
   const { t } = useTranslation()
-  const [stakeAction, setStakeAction] = useState<StakeAction>(
-    "delegate" as StakeAction
+  const [stakeAction, setStakeAction] = useState<QuickStakeAction>(
+    "delegate" as QuickStakeAction
   )
 
   return (
@@ -21,7 +21,7 @@ const QuickStakeActionSelector = (props: Props) => {
         <button
           className={o === stakeAction ? styles.active : ""}
           key={o}
-          onClick={() => setStakeAction(o as StakeAction)}
+          onClick={() => setStakeAction(o as QuickStakeAction)}
         >
           {capitalize(t(o))}
         </button>

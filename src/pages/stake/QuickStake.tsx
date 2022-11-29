@@ -1,6 +1,6 @@
 // import styles from "./QuickStake.module.scss"
 import QuickStakeActionSelector from "./QuickStakeActionSelector"
-import StakeForm, { StakeAction } from "txs/stake/StakeForm"
+import QuickStakeForm, { QuickStakeAction } from "txs/stake/QuickStakeForm"
 import {
   useDelegations,
   useQuickStakeElgibleVals,
@@ -12,46 +12,33 @@ import { Card, ChainFilter, Page } from "components/layout"
 
 const QuickStake = () => {
   const renderQuickStakeForm = (
-    chain: string | undefined,
-    action: StakeAction
+    chainID: string | undefined,
+    action: QuickStakeAction
   ) => {
-    if (
-      !(
-        balances &&
-        validators &&
-        delegations &&
-        chain &&
-        action &&
-        quickStakeDesinations &&
-        chain
-      )
-    )
+    if (!(balances && delegations && destinations && chainID && action))
       return null
     const props = {
       tab: action,
-      quickStakeDesinations,
+      destinations,
       balances,
-      validators,
-      destination: quickStakeDesinations[0], //TODO: find workaround for this
       delegations,
-      chain,
+      chainID,
     }
-    return <StakeForm {...props} />
+    return <QuickStakeForm {...props} />
   }
 
   const { data: balances } = useBalances()
-  const { data: validators } = useValidators()
   const { data: delegations } = useDelegations()
-  const quickStakeDesinations = useQuickStakeElgibleVals("phoenix-1")
+  const destinations = useQuickStakeElgibleVals("phoenix-1") // TODO: use currently selected chain
 
   return (
     <Page>
       <QuickStakeActionSelector>
         {(action) => (
           <ChainFilter>
-            {(chain) => (
+            {(chainID) => (
               <Card>
-                <TxContext>{renderQuickStakeForm(chain, action)}</TxContext>
+                <TxContext>{renderQuickStakeForm(chainID, action)}</TxContext>
               </Card>
             )}
           </ChainFilter>
