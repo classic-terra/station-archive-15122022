@@ -38,8 +38,6 @@ interface Props {
 const QuickStakeForm = (props: Props) => {
   const { tab, destinations, balances, delegations, chainID } = props
 
-  console.log("delegations", delegations)
-
   const { t } = useTranslation()
   const address = useAddress()
 

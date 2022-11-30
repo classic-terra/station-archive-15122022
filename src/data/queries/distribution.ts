@@ -34,9 +34,9 @@ export const useCommunityPool = (chain: string) => {
 }
 
 /* slashing */
-export const useValidatorSlashCount = (
-  operatorAddress: ValAddress,
-  latestHeight: string
+export const useElimSlashedVals = (
+  opAddresses: ValAddress[],
+  latestHeight?: string
 ) => {
   const lcd = useInterchainLCDClient()
   const SLASH_WINDOW = 1_200_000 // used for quick stake elgibility
@@ -52,13 +52,19 @@ export const useValidatorSlashCount = (
   }
 
   return useQuery(
-    [queryKey.distribution.validatorSlashingEvents, operatorAddress],
+    [queryKey.distribution.validatorSlashingEvents, opAddresses],
     async () => {
-      const [, { total }] = await lcd.distribution.validatorSlashingEvents(
-        operatorAddress,
-        { ...slashQueryParams }
+      return (
+        (await Promise.all(
+          opAddresses.map(async (opAddress) => {
+            const [, { total }] =
+              await lcd.distribution.validatorSlashingEvents(opAddress, {
+                ...slashQueryParams,
+              })
+            if (total === 0) return opAddress
+          })
+        )) || []
       )
-      return total
     },
     { ...RefetchOptions.INFINITY }
   )

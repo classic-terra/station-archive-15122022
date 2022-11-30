@@ -16,7 +16,7 @@ import { has } from "utils/num"
 import { StakeAction } from "txs/stake/StakeForm"
 import { queryKey, Pagination, RefetchOptions } from "../query"
 import { useAddress } from "../wallet"
-// import { useValidatorSlashCount } from "./distribution"
+import { useElimSlashedVals } from "./distribution"
 import { useLatestBlock } from "./tendermint"
 import { useInterchainLCDClient, useLCDClient } from "./lcdClient"
 import shuffle from "utils/shuffle"
@@ -68,40 +68,46 @@ export const useInterchainValidators = (chain: string) => {
 export const useQuickStakeElgibleVals = (chainID: string) => {
   const MAX_COMMISSION = 0.05
   const VOTE_POWER_INCLUDE = 0.65
+  const { data: validators = [] } = useInterchainValidators(chainID)
   const { data: latestHeight } = useLatestBlock(chainID)
-  const { data: validators } = useInterchainValidators(chainID)
 
-  if (!validators || !latestHeight) return
   const totalStaked = getTotalStakedTokens(validators)
-  const vals = validators
-    .map((v) => {
-      // const { data: slashCount } = useValidatorSlashCount(v.operator_address, latestHeight)
-      return {
-        ...v,
-        slashCount: 0, // TODO: query slash count from distribution
-        votingPower: Number(v.tokens) / totalStaked,
-      }
-    })
-    .filter(
-      ({ commission, slashCount }) =>
-        Number(commission.commission_rates.rate) <= MAX_COMMISSION &&
-        slashCount === 0
-    )
-    .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
-    .reduce(
-      (acc, cur) => {
-        acc.sumVotePower += cur.votingPower
-        if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
-          acc.elgible.push(cur.operator_address)
+  const vals = shuffle(
+    validators
+      .map((v) => {
+        return {
+          ...v,
+          votingPower: Number(v.tokens) / totalStaked,
         }
-        return acc
-      },
-      {
-        sumVotePower: 0,
-        elgible: [] as ValAddress[],
-      }
-    )
-  return vals.elgible
+      })
+      .filter(
+        ({ commission }) =>
+          Number(commission.commission_rates.rate) <= MAX_COMMISSION
+      )
+      .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
+      .reduce(
+        (acc, cur) => {
+          acc.sumVotePower += cur.votingPower
+          if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
+            acc.elgible.push(cur.operator_address)
+          }
+          return acc
+        },
+        {
+          sumVotePower: 0,
+          elgible: [] as ValAddress[],
+        }
+      ).elgible
+  )
+
+  const { data: unslashedVals } = useElimSlashedVals(
+    vals.slice(0, 15),
+    latestHeight || ""
+  )
+
+  if (unslashedVals && unslashedVals.length >= 5) {
+    return unslashedVals
+  }
 }
 
 export const useValidator = (operatorAddress: ValAddress) => {
@@ -248,7 +254,7 @@ export const sumEntries = (entries: UnbondingDelegation.Entry[]) =>
   ).toString()
 
 /* quick staking helpers */
-export const getQuickStakeMsgs = (
+export const getQuickStakeMsgs = async (
   address: string,
   amount: string,
   elgibleVals: ValAddress[]

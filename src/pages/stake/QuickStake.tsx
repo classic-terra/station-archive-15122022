@@ -1,11 +1,7 @@
 // import styles from "./QuickStake.module.scss"
 import QuickStakeActionSelector from "./QuickStakeActionSelector"
 import QuickStakeForm, { QuickStakeAction } from "txs/stake/QuickStakeForm"
-import {
-  useDelegations,
-  useQuickStakeElgibleVals,
-  useValidators,
-} from "data/queries/staking"
+import { useDelegations, useQuickStakeElgibleVals } from "data/queries/staking"
 import { useBalances } from "data/queries/bank"
 import TxContext from "txs/TxContext"
 import { Card, ChainFilter, Page } from "components/layout"
