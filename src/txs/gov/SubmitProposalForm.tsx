@@ -109,7 +109,10 @@ const SubmitProposalForm = ({ communityPool, minDeposit }: Props) => {
   const { errors } = form.formState
   const { input, ...values } = watch()
   const amount = toAmount(input)
-  const { fields, append, remove } = useFieldArray({ control, name: "changes" })
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "changes",
+  })
   const coinsFieldArray = useFieldArray({ control, name: "coins" })
 
   /* effect: ParameterChangeProposal */
