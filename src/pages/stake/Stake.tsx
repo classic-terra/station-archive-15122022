@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next"
 import { LinkButton } from "components/general"
-import { Col, Page } from "components/layout"
+import { Page } from "components/layout"
 import StakeOptions from "./StakeOptions"
+import styles from "./Stake.module.scss"
 
 const Stake = () => {
   const { t } = useTranslation()
@@ -9,15 +10,17 @@ const Stake = () => {
   return (
     <Page
       title={t("Stake")}
+      mainClassName={styles.page}
       extra={
         <LinkButton to="/rewards" color="primary" size="small">
           {t("Withdraw all rewards")}
         </LinkButton>
       }
     >
-      <Col>
+      {" "}
+      <div className={styles.stake__options}>
         <StakeOptions />
-      </Col>
+      </div>
     </Page>
   )
 }

@@ -90,11 +90,9 @@ export const useInterchainValidators = (chain: string) => {
 //   return shuffle(Array.from(elgible));
 // }
 
-export const useQuickStakeElgibleVals = (chainID: string) => {
+export const getQuickStakeEligibleVals = (validators: Validator[]) => {
   const MAX_COMMISSION = 0.05
   const VOTE_POWER_INCLUDE = 0.65
-  const { data: validators = [] } = useInterchainValidators(chainID)
-  const { data: latestHeight } = useLatestBlock(chainID)
 
   const totalStaked = getTotalStakedTokens(validators)
   const vals = validators

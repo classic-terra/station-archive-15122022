@@ -1,7 +1,11 @@
 // import styles from "./QuickStake.module.scss"
 import QuickStakeActionSelector from "./QuickStakeActionSelector"
 import QuickStakeForm, { QuickStakeAction } from "txs/stake/QuickStakeForm"
-import { useDelegations, useQuickStakeElgibleVals } from "data/queries/staking"
+import {
+  useDelegations,
+  getQuickStakeEligibleVals,
+  useInterchainValidators,
+} from "data/queries/staking"
 import { useBalances } from "data/queries/bank"
 import TxContext from "txs/TxContext"
 import { Card, ChainFilter, Page } from "components/layout"
@@ -11,6 +15,7 @@ const QuickStake = () => {
     chainID: string | undefined,
     action: QuickStakeAction
   ) => {
+    const destinations = getQuickStakeEligibleVals(validators) // TODO: use currently selected chain
     if (!(balances && delegations && destinations && chainID && action))
       return null
     const props = {
@@ -25,22 +30,20 @@ const QuickStake = () => {
 
   const { data: balances } = useBalances()
   const { data: delegations } = useDelegations()
-  const destinations = useQuickStakeElgibleVals("phoenix-1") // TODO: use currently selected chain
+  const { data: validators = [] } = useInterchainValidators("phoenix-1") // to do, get chain from ChainFilter
 
   return (
-    <Page>
-      <QuickStakeActionSelector>
-        {(action) => (
-          <ChainFilter>
-            {(chainID) => (
-              <Card>
-                <TxContext>{renderQuickStakeForm(chainID, action)}</TxContext>
-              </Card>
-            )}
-          </ChainFilter>
-        )}
-      </QuickStakeActionSelector>
-    </Page>
+    <QuickStakeActionSelector>
+      {(action) => (
+        <ChainFilter outside>
+          {(chainID) => (
+            <Card>
+              <TxContext>{renderQuickStakeForm(chainID, action)}</TxContext>
+            </Card>
+          )}
+        </ChainFilter>
+      )}
+    </QuickStakeActionSelector>
   )
 }
 

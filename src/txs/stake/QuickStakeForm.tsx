@@ -53,14 +53,12 @@ const QuickStakeForm = (props: Props) => {
   const { errors } = formState
   const { input } = watch()
   const amount = toAmount(input)
-  console.log("amount", amount)
 
   /* tx */
   const createTx = useCallback(
     ({ input }: TxValues) => {
       if (!address) return
       const amount = toAmount(input)
-      console.log("amount", typeof amount)
       const msgs = getQuickStakeMsgs(address, amount, destinations)
 
       if (tab === QuickStakeAction.DELEGATE) {
@@ -78,7 +76,7 @@ const QuickStakeForm = (props: Props) => {
 
   /* fee */
   const balance = {
-    [QuickStakeAction.DELEGATE]: getAmount(balances, "uluna"),
+    [QuickStakeAction.DELEGATE]: getAmount(balances, "uluna"), // TODO flexible denom
     [QuickStakeAction.UNBOND]: calcDelegationsTotal(delegations),
   }[tab]
 

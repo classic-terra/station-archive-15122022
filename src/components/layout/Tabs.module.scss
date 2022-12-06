@@ -4,6 +4,17 @@
   white-space: nowrap;
 }
 
+.fullWidth {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  .tab {
+    flex: 1 0 auto;
+  }
+}
+
 .card {
   background: var(--card-bg-muted);
   border: var(--border-width) solid var(--card-border);

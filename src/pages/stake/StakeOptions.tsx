@@ -18,7 +18,7 @@ const StakeOptions = () => {
     },
   ]
 
-  return <Tabs tabs={tabs} type="card" />
+  return <Tabs tabs={tabs} fullWidth type="card" />
 }
 
 export default StakeOptions

@@ -10,11 +10,20 @@ interface Props {
   tabs: { key: string; tab: string; children: ReactNode; disabled?: boolean }[]
   defaultActiveKey?: string
   type: "line" | "card"
+  fullWidth?: boolean
   reversed?: boolean
   state?: boolean
 }
 
-const Tabs = ({ tabs, defaultActiveKey, type, reversed, state }: Props) => {
+const Tabs = ({
+  tabs,
+  defaultActiveKey,
+  type,
+  fullWidth,
+  reversed,
+  state,
+}: Props) => {
+  console.log("fullWidth", fullWidth)
   const initial = defaultActiveKey ?? tabs[0].key
   const navigate = useNavigate()
   const location = useLocation()
@@ -29,7 +38,7 @@ const Tabs = ({ tabs, defaultActiveKey, type, reversed, state }: Props) => {
 
   return (
     <>
-      <section className={cx(styles.tabs, type, { reversed })}>
+      <section className={cx(styles.tabs, type, { reversed, fullWidth })}>
         {tabs.map(({ key, tab, disabled }) =>
           state ? (
             <button
