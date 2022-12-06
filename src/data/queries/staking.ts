@@ -99,15 +99,16 @@ export const useQuickStakeElgibleVals = (chainID: string) => {
         }
       ).elgible
   )
+  return vals
 
-  const { data: unslashedVals } = useElimSlashedVals(
-    vals.slice(0, 15),
-    latestHeight || ""
-  )
+  // const { data: unslashedVals } = useElimSlashedVals(
+  //   vals.slice(0, 15),
+  //   latestHeight || ""
+  // )
 
-  if (unslashedVals && unslashedVals.length >= 5) {
-    return unslashedVals
-  }
+  // if (unslashedVals && unslashedVals.length >= 5) {
+  //   return unslashedVals
+  // }
 }
 
 export const useValidator = (operatorAddress: ValAddress) => {
@@ -254,7 +255,7 @@ export const sumEntries = (entries: UnbondingDelegation.Entry[]) =>
   ).toString()
 
 /* quick staking helpers */
-export const getQuickStakeMsgs = async (
+export const getQuickStakeMsgs = (
   address: string,
   amount: string,
   elgibleVals: ValAddress[]

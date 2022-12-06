@@ -5,11 +5,14 @@ import { useDelegations, useQuickStakeElgibleVals } from "data/queries/staking"
 import { useBalances } from "data/queries/bank"
 import TxContext from "txs/TxContext"
 import { Card, ChainFilter, Page } from "components/layout"
+import QuickStakeVals from "./QuickStakeVals"
+import { ValAddress } from "@terra-money/feather.js"
 
 const QuickStake = () => {
   const renderQuickStakeForm = (
     chainID: string | undefined,
-    action: QuickStakeAction
+    action: QuickStakeAction,
+    destinations: ValAddress[]
   ) => {
     if (!(balances && delegations && destinations && chainID && action))
       return null
@@ -25,7 +28,6 @@ const QuickStake = () => {
 
   const { data: balances } = useBalances()
   const { data: delegations } = useDelegations()
-  const destinations = useQuickStakeElgibleVals("phoenix-1") // TODO: use currently selected chain
 
   return (
     <Page>
@@ -33,9 +35,13 @@ const QuickStake = () => {
         {(action) => (
           <ChainFilter>
             {(chainID) => (
-              <Card>
-                <TxContext>{renderQuickStakeForm(chainID, action)}</TxContext>
-              </Card>
+              <QuickStakeVals chainID={chainID}>
+                {(chainID, destinations) => (
+                  <TxContext>
+                    {renderQuickStakeForm(chainID, action, destinations)}
+                  </TxContext>
+                )}
+              </QuickStakeVals>
             )}
           </ChainFilter>
         )}
