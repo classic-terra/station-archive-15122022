@@ -5,6 +5,7 @@ import {
   AccAddress,
   MsgDelegate,
   ValAddress,
+  MsgUndelegate,
   Validator,
   Coin,
   UnbondingDelegation,
@@ -65,6 +66,30 @@ export const useInterchainValidators = (chain: string) => {
   )
 }
 
+// export const useQuickStakeElgibleVals2 = (chainID: string) => {
+//   const MAX_COMMISSION = 0.05
+//   const VOTE_POWER_INCLUDE = 0.65
+//   const { data: validators = [] } = useInterchainValidators(chainID)
+//   const { data: latestHeight } = useLatestBlock(chainID)
+//   const totalStaked = getTotalStakedTokens(validators)
+
+//   const elgible = new Set<ValAddress>();
+//   let sumVotePower = 0;
+
+//   for (const v of validators.sort((a, b) => Number(a.tokens) / totalStaked - Number(b.tokens) / totalStaked)) {
+//     const votingPower = Number(v.tokens) / getTotalStakedTokens(validators);
+//     if (Number(v.commission.commission_rates.rate) > MAX_COMMISSION) {
+//       continue;
+//     }
+//     elgible.add(v.operator_address);
+//     sumVotePower += votingPower;
+//     if (sumVotePower >= VOTE_POWER_INCLUDE) {
+//       break;
+//     }
+//   }
+//   return shuffle(Array.from(elgible));
+// }
+
 export const useQuickStakeElgibleVals = (chainID: string) => {
   const MAX_COMMISSION = 0.05
   const VOTE_POWER_INCLUDE = 0.65
@@ -72,42 +97,27 @@ export const useQuickStakeElgibleVals = (chainID: string) => {
   const { data: latestHeight } = useLatestBlock(chainID)
 
   const totalStaked = getTotalStakedTokens(validators)
-  const vals = shuffle(
-    validators
-      .map((v) => {
-        return {
-          ...v,
-          votingPower: Number(v.tokens) / totalStaked,
+  const vals = validators
+    .map((v) => ({ ...v, votingPower: Number(v.tokens) / totalStaked }))
+    .filter(
+      ({ commission }) =>
+        Number(commission.commission_rates.rate) <= MAX_COMMISSION
+    )
+    .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
+    .reduce(
+      (acc, cur) => {
+        acc.sumVotePower += cur.votingPower
+        if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
+          acc.elgible.push(cur.operator_address)
         }
-      })
-      .filter(
-        ({ commission }) =>
-          Number(commission.commission_rates.rate) <= MAX_COMMISSION
-      )
-      .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
-      .reduce(
-        (acc, cur) => {
-          acc.sumVotePower += cur.votingPower
-          if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
-            acc.elgible.push(cur.operator_address)
-          }
-          return acc
-        },
-        {
-          sumVotePower: 0,
-          elgible: [] as ValAddress[],
-        }
-      ).elgible
-  )
-
-  const { data: unslashedVals } = useElimSlashedVals(
-    vals.slice(0, 15),
-    latestHeight || ""
-  )
-
-  if (unslashedVals && unslashedVals.length >= 5) {
-    return unslashedVals
-  }
+        return acc
+      },
+      {
+        sumVotePower: 0,
+        elgible: [] as ValAddress[],
+      }
+    )
+  return shuffle(vals.elgible)
 }
 
 export const useValidator = (operatorAddress: ValAddress) => {
@@ -254,7 +264,9 @@ export const sumEntries = (entries: UnbondingDelegation.Entry[]) =>
   ).toString()
 
 /* quick staking helpers */
-export const getQuickStakeMsgs = async (
+
+// TODO: update both to accept non uluna denoms
+export const getQuickStakeMsgs = (
   address: string,
   amount: string,
   elgibleVals: ValAddress[]
@@ -282,14 +294,40 @@ export const getQuickStakeMsgs = async (
 }
 
 //  choose random val and undelegate amount and if not matchign amount add next random validator until remainder of desired stake is met
-
 export const getQuickUnstakeMsgs = (
   address: string,
   amount: string,
   delegations: Delegation[]
 ) => {
-  console.log("amount", amount)
-  console.log("delegations", delegations)
   const bnAmt = new BigNumber(amount)
-  return bnAmt
+  const unstakeMsgs = []
+  let remaining = bnAmt
+
+  for (const delegation of delegations) {
+    const delAmt = new BigNumber(delegation.balance.amount.toString())
+    if (remaining.lt(delAmt)) {
+      unstakeMsgs.push(
+        new MsgUndelegate(
+          address,
+          delegation.delegator_address,
+          new Coin("uluna", remaining.toString())
+        )
+      )
+      remaining = new BigNumber(0)
+    } else {
+      unstakeMsgs.push(
+        new MsgUndelegate(
+          address,
+          delegation.delegator_address,
+          new Coin("uluna", bnAmt.toString())
+        )
+      )
+      remaining = remaining.minus(delAmt)
+    }
+    if (remaining.isZero()) {
+      break
+    }
+  }
+
+  return unstakeMsgs
 }
