@@ -6,10 +6,8 @@ import RemoveIcon from "@mui/icons-material/Remove"
 import { AccAddress } from "@terra-money/terra.js"
 import { MsgInstantiateContract } from "@terra-money/terra.js"
 import { SAMPLE_ADDRESS } from "config/constants"
-import { sortCoins } from "utils/coin"
 import { parseJSON, validateMsg } from "utils/data"
 import { useAddress } from "data/wallet"
-import { useIsClassic } from "data/query"
 import { useBankBalance } from "data/queries/bank"
 import { WithTokenItem } from "data/token"
 import { Form, FormGroup, FormItem } from "components/form"
@@ -31,10 +29,9 @@ const InstantiateContractForm = () => {
   const { t } = useTranslation()
   const address = useAddress()
   const bankBalance = useBankBalance()
-  const isClassic = useIsClassic()
 
   /* tx context */
-  const initialGasDenom = getInitialGasDenom(bankBalance)
+  const initialGasDenom = getInitialGasDenom()
   const defaultItem = { denom: initialGasDenom }
   const { findDecimals } = useIBCHelper()
 
@@ -167,16 +164,8 @@ const InstantiateContractForm = () => {
                     inputMode="decimal"
                     placeholder={getPlaceholder(decimals)}
                     selectBefore={
-                      <Select
-                        {...register(`coins.${index}.denom`)}
-                        handleChange={(value) =>
-                          setValue(`coins.${index}.denom`, value)
-                        }
-                        currentValue={getValues(`coins.${index}.denom`)}
-                        isToken
-                        before
-                      >
-                        {sortCoins(bankBalance).map(({ denom }) => (
+                      <Select {...register(`coins.${index}.denom`)} before>
+                        {bankBalance.map(({ denom }) => (
                           <WithTokenItem token={denom} key={denom}>
                             {({ symbol }) => (
                               <option value={denom}>{symbol}</option>
@@ -191,11 +180,9 @@ const InstantiateContractForm = () => {
             })}
           </FormItem>
 
-          {!isClassic && (
-            <FormItem label={t("Label")} error={errors.label?.message}>
-              <Input {...register("label")} />
-            </FormItem>
-          )}
+          <FormItem label={t("Label")} error={errors.label?.message}>
+            <Input {...register("label")} />
+          </FormItem>
 
           {fee.render()}
           {submit.button}

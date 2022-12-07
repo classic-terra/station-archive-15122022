@@ -1,11 +1,12 @@
 import { useQuery } from "react-query"
 import axios from "axios"
-import { isDenomTerraNative } from "@terra.kitchen/utils"
-import { Coins } from "@terra-money/terra.js"
 import createContext from "utils/createContext"
-import { queryKey, RefetchOptions, useIsClassic } from "../query"
-import { useAddress, useNetwork } from "../wallet"
-import { useLCDClient } from "./lcdClient"
+import { queryKey, RefetchOptions } from "../query"
+import { useNetwork } from "../wallet"
+import { useInterchainLCDClient, useLCDClient } from "./lcdClient"
+import { useInterchainAddresses } from "auth/hooks/useAddress"
+import { useCustomTokensCW20 } from "data/settings/CustomTokens"
+import { useChains } from "./chains"
 
 export const useSupply = () => {
   const { lcd } = useNetwork()
@@ -30,55 +31,120 @@ export const useSupply = () => {
   )
 }
 
-// As a wallet app, native token balance is always required from the beginning.
-export const [useBankBalance, BankBalanceProvider] =
-  createContext<Coins>("useBankBalance")
-
-export const useInitialBankBalance = () => {
-  const address = useAddress()
-  const lcd = useLCDClient()
-  const isClassic = useIsClassic()
+export const useInitialTokenBalance = () => {
+  const addresses = useInterchainAddresses()
+  const chains = useChains()
+  const lcd = useInterchainLCDClient()
+  const { list: cw20 } = useCustomTokensCW20()
 
   return useQuery(
-    [queryKey.bank.balance, address],
+    [queryKey.bank.balances, addresses, cw20, chains],
     async () => {
-      if (!address) return new Coins()
-      // TODO: Pagination
-      // Required when the number of results exceed 100
-      if (isClassic) {
-        const [coins] = await lcd.bank.balance(address)
-        return coins
-      }
+      return (await Promise.all(
+        cw20.map(async ({ token }) => {
+          const chainID =
+            Object.values(chains).find(({ prefix }) => token.startsWith(prefix))
+              ?.chainID ?? ""
 
-      const [coins] = await lcd.bank.spendableBalances(address)
-      return coins
+          const address = addresses?.[chainID]
+          if (!address)
+            return {
+              amount: "0",
+              denom: token,
+              chain: chainID,
+            }
+          const { balance } = await lcd.wasm.contractQuery<{ balance: Amount }>(
+            token,
+            { balance: { address } }
+          )
+          return {
+            amount: balance,
+            denom: token,
+            chain: chainID,
+          }
+        })
+      )) as CoinBalance[]
     },
     { ...RefetchOptions.DEFAULT }
   )
+}
+
+// As a wallet app, native token balance is always required from the beginning.
+export const [useBankBalance, BankBalanceProvider] =
+  createContext<CoinBalance[]>("useBankBalance")
+
+export const useInitialBankBalance = () => {
+  const addresses = useInterchainAddresses()
+  const lcd = useInterchainLCDClient()
+
+  return useQuery(
+    [queryKey.bank.balances, addresses],
+    async () => {
+      if (!addresses) return [] as CoinBalance[]
+      const chains = Object.keys(addresses)
+
+      // TODO: Pagination
+      // Required when the number of results exceed 100
+      const balances = await Promise.all(
+        chains.map((chain) => lcd.bank.balance(addresses[chain]))
+      )
+
+      const result = [] as CoinBalance[]
+      chains.forEach((chain, i) => {
+        balances[i][0].toArray().forEach(({ denom, amount }) =>
+          result.push({
+            denom,
+            amount: amount.toString(),
+            chain,
+          })
+        )
+      })
+
+      return result
+    },
+    { ...RefetchOptions.DEFAULT }
+  )
+}
+
+interface CoinBalance {
+  amount: string
+  denom: string
+  chain: string
 }
 
 export const useBalances = () => {
-  const address = useAddress()
+  const addresses = useInterchainAddresses()
   const lcd = useLCDClient()
 
   return useQuery(
-    [queryKey.bank.balances, address],
+    [queryKey.bank.balances, addresses],
     async () => {
-      if (!address) return new Coins()
-      const [coins] = await lcd.bank.balance(address)
-      return coins
+      if (!addresses) return [] as CoinBalance[]
+      const chains = Object.keys(addresses)
+
+      // TODO: Pagination
+      // Required when the number of results exceed 100
+      const balances = await Promise.all(
+        chains.map((chain) => lcd.bank.balance(addresses[chain]))
+      )
+
+      const result = [] as CoinBalance[]
+      chains.forEach((chain, i) => {
+        balances[i][0].toArray().forEach(({ denom, amount }) =>
+          result.push({
+            denom,
+            amount: amount.toString(),
+            chain,
+          })
+        )
+      })
+      return result
     },
     { ...RefetchOptions.DEFAULT }
   )
 }
 
-export const useTerraNativeLength = () => {
-  const bankBalance = useBankBalance()
-  return bankBalance?.toArray().filter(({ denom }) => isDenomTerraNative(denom))
-    .length
-}
-
 export const useIsWalletEmpty = () => {
-  const length = useTerraNativeLength()
-  return !length
+  const bankBalance = useBankBalance()
+  return !bankBalance.length
 }

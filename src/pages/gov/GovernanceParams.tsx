@@ -5,23 +5,28 @@ import { useVotingParams } from "data/queries/gov"
 import { Card } from "components/layout"
 import { Read } from "components/token"
 import DataList from "./components/DataList"
-import { isWallet } from "auth"
+import { useChains } from "data/queries/chains"
+import styles from "./GovernanceParams.module.scss"
 
-const GovernanceParams = () => {
+const GovernanceParams = ({ chain }: { chain: string }) => {
   const { t } = useTranslation()
+  const chains = useChains()
 
-  const { data: votingParams } = useVotingParams()
-  const { data: depositParams } = useDepositParams()
+  const { data: votingParams } = useVotingParams(chain)
+  const { data: depositParams } = useDepositParams(chain)
 
   if (!(votingParams && depositParams)) return null
 
-  const minDeposit = depositParams.min_deposit.get("uluna")
+  const minDeposit = depositParams.min_deposit.get(chains[chain].baseAsset)
 
   const contents = [
     {
       title: t("Minimum deposit"),
       content: minDeposit && (
-        <Read amount={minDeposit.amount.toString()} token="uluna" />
+        <Read
+          amount={minDeposit.amount.toString()}
+          token={chains[chain].baseAsset}
+        />
       ),
     },
     {
@@ -39,11 +44,8 @@ const GovernanceParams = () => {
   ]
 
   return (
-    <Card>
-      <DataList
-        list={contents}
-        type={isWallet.mobile() ? "rowList" : "horizontal"}
-      />
+    <Card className={styles.params}>
+      <DataList list={contents} type="horizontal" />
     </Card>
   )
 }

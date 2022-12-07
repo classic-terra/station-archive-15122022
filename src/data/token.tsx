@@ -1,16 +1,16 @@
 import { ReactNode } from "react"
-import { isDenomIBC, isDenomTerra } from "@terra.kitchen/utils"
+import { isDenomIBC } from "@terra.kitchen/utils"
 import { readDenom, truncate } from "@terra.kitchen/utils"
 import { AccAddress } from "@terra-money/terra.js"
 import { ASSETS } from "config/constants"
-import { useIsClassic } from "./query"
 import { useIBCBaseDenom } from "./queries/ibc"
 import { useTokenInfoCW20 } from "./queries/wasm"
 import { useCustomTokensCW20 } from "./settings/CustomTokens"
 import { useCW20Whitelist, useIBCWhitelist } from "./Terra/TerraAssets"
+import { useWhitelist } from "./queries/chains"
 
 export const useTokenItem = (token: Token): TokenItem | undefined => {
-  const isClassic = useIsClassic()
+  const readNativeDenom = useNativeDenoms()
 
   /* CW20 */
   const matchToken = (item: TokenItem) => item.token === token
@@ -53,7 +53,7 @@ export const useTokenItem = (token: Token): TokenItem | undefined => {
     return readIBCDenom(item)
   }
 
-  return readNativeDenom(token, isClassic)
+  return readNativeDenom(token)
 }
 
 interface Props {
@@ -62,36 +62,39 @@ interface Props {
 }
 
 export const WithTokenItem = ({ token, children }: Props) => {
-  const tokenItem = useTokenItem(token)
-  if (!tokenItem) return null
-  return <>{children(tokenItem)}</>
+  const readNativeDenom = useNativeDenoms()
+  return <>{children(readNativeDenom(token))}</>
 }
 
 /* helpers */
 export const getIcon = (path: string) => `${ASSETS}/icon/svg/${path}`
 
-export const readNativeDenom = (
-  denom: Denom,
-  isClassic?: boolean
-): TokenItem => {
-  const symbol = readDenom(denom)
-  const symbolClassic = denom === "uluna" ? "LUNC" : symbol + "C"
+export const useNativeDenoms = () => {
+  const whitelist = useWhitelist()
+  const { list: cw20 } = useCustomTokensCW20()
 
-  const path = isDenomTerra(denom)
-    ? `Terra/${symbol}.svg`
-    : isClassic
-    ? "LUNC.svg"
-    : "Luna.svg"
-
-  return {
-    token: denom,
-    symbol: isClassic ? symbolClassic : symbol,
-    name: isDenomTerra(denom)
-      ? `Terra ${denom.slice(1).toUpperCase()}`
-      : undefined,
-    icon: getIcon(path),
-    decimals: 6,
+  function readNativeDenom(denom: Denom): TokenItem {
+    const fixedDenom = denom.startsWith("ibc/")
+      ? `${readDenom(denom).substring(0, 5)}...`
+      : readDenom(denom)
+    return (
+      whitelist[denom] ??
+      cw20.find(({ token }) => denom === token) ??
+      // that's needed for axl tokens
+      Object.values(whitelist).find((t) => t.token === denom) ?? {
+        // default token icon
+        token: denom,
+        symbol: fixedDenom,
+        name: fixedDenom,
+        icon: denom.startsWith("ibc/")
+          ? "https://assets.terra.money/icon/svg/IBC.svg"
+          : "https://assets.terra.money/icon/svg/Terra.svg",
+        decimals: 6,
+      }
+    )
   }
+
+  return readNativeDenom
 }
 
 export const readIBCDenom = (item: IBCTokenItem): TokenItem => {

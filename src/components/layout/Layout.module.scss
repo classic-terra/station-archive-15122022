@@ -48,6 +48,29 @@
   }
 }
 
+.maincontainer {
+  display: grid;
+
+  grid-template-columns: auto min-content;
+  grid-template-areas: "main walletbar";
+
+  @media (max-width: var(--wallet-width)) {
+    grid-template-rows: auto repeat(2, var(--header-height)) 1fr;
+    grid-template-areas:
+      "walletbar"
+      "page";
+  }
+
+  height: calc(100vh - var(--header-height));
+}
+
+.page {
+  grid-area: page;
+  grid-template-rows: 1fr auto;
+  display: grid;
+  background: var(--menu-bg); // TODO: change
+}
+
 @mixin border-left {
   @include desktop {
     border-left: var(--border-width) solid var(--card-border);

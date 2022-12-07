@@ -83,7 +83,7 @@ const AssetActions = ({ token, symbol, balance }: Props) => {
       {networkName !== "testnet" && (
         <InternalLink
           icon={<RestartAltIcon style={{ fontSize: 18 }} />}
-          to="/swap"
+          to="/"
           state={token}
           disabled={
             isWalletEmpty || !has(balance) || !getIsSwappableToken(token)

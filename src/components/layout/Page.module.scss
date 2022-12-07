@@ -1,7 +1,7 @@
 @import "mixins";
 
 .page {
-  overflow: hidden;
+  overflow-y: auto;
   // padding here to position progress bar
 
   @include desktop {
@@ -81,7 +81,6 @@
     gap: 36px;
 
     .header {
-      border-bottom: 1px solid var(--card-border);
       padding-bottom: 18px;
     }
 

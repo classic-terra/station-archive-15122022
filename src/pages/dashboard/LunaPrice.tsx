@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "data/settings/Currency"
-import { useMemoizedPrices } from "data/queries/oracle"
+import { useMemoizedPrices } from "data/queries/coingecko"
 import { Card } from "components/layout"
 import { Read } from "components/token"
 import { ModalButton, ModalRef, Mode } from "components/feedback"
@@ -36,8 +36,8 @@ const ChartButton = forwardRef<ModalRef, any>((_, ref) => {
 const LunaPrice = () => {
   const { t } = useTranslation()
   const currency = useCurrency()
-  const denom = currency === "uluna" ? "uusd" : currency
-  const { data: prices, ...state } = useMemoizedPrices(denom)
+  const denom = currency.id === "uluna" ? "uusd" : currency.id
+  const { data: prices, ...state } = useMemoizedPrices()
 
   const modalRef = useRef<ModalRef>({
     open: () => {},
@@ -49,8 +49,17 @@ const LunaPrice = () => {
     const { uluna: price } = prices
     return (
       <DashboardContent
-        value={<Read amount={String(price * 1e6)} denom={denom} auto />}
-        footer={!isWallet.mobile() && <ChartButton />}
+        value={<Read amount={String(price.price * 1e6)} denom={denom} auto />}
+        footer={
+          <ModalButton
+            title={t("Luna price")}
+            renderButton={(open) => (
+              <button onClick={open}>{t("Show chart")}</button>
+            )}
+          >
+            <LunaPriceChart />
+          </ModalButton>
+        }
       />
     )
   }

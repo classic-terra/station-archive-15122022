@@ -6,6 +6,7 @@ import classNames from "classnames/bind"
 import { mobileIsMenuOpenState } from "components/layout"
 import { useNav } from "../routes"
 import styles from "./Nav.module.scss"
+import { useThemeFavicon } from "data/settings/Theme"
 
 import { ReactComponent as MenuIcon } from "styles/images/menu/Menu.svg"
 import { ReactComponent as WalletIcon } from "styles/images/menu/Wallet.svg"
@@ -21,6 +22,7 @@ const Nav = () => {
   useCloseMenuOnNavigate()
   const { t } = useTranslation()
   const { menu, mobileMenu, subPage } = useNav()
+  const icon = useThemeFavicon()
   const [isOpen, setIsOpen] = useRecoilState(mobileIsMenuOpenState)
   const toggle = () => setIsOpen(!isOpen)
   const close = () => setIsOpen(false)
@@ -49,9 +51,14 @@ const Nav = () => {
   return buttonView ? (
     <nav>
       <header className={styles.header}>
-        <NavLink to="/" className={classNames(styles.item, styles.logo)}>
-          <strong>Terra</strong> Station
-        </NavLink>
+        <a
+          href="https://setup-station.terra.money/"
+          target="_blank"
+          rel="noreferrer"
+          className={classNames(styles.item, styles.logo)}
+        >
+          <img src={icon} alt="Station" /> <strong>Station</strong>
+        </a>
 
         <NavLink
           to="/wallet"

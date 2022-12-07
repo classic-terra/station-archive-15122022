@@ -7,8 +7,7 @@ import { isDenomTerraNative, readAmount, readDenom } from "@terra.kitchen/utils"
 import { sortDenoms } from "utils/coin"
 import { useCurrency } from "data/settings/Currency"
 import { Aggregate, useTxVolume } from "data/Terra/TerraAPI"
-import { useIsClassic } from "data/query"
-import { useActiveDenoms } from "data/queries/oracle"
+import { useActiveDenoms } from "data/queries/coingecko"
 import { Select } from "components/form"
 import { Card } from "components/layout"
 import { TooltipIcon } from "components/display"
@@ -20,10 +19,9 @@ import { isWallet } from "auth"
 const TxVolume = () => {
   const { t } = useTranslation()
   const currency = useCurrency()
-  const isClassic = useIsClassic()
 
   /* data */
-  const [denom, setDenom] = useState(isClassic ? "uusd" : "uluna")
+  const [denom, setDenom] = useState("uluna")
   const [type, setType] = useState<Aggregate>(Aggregate.PERIODIC)
   const { data: activeDenoms } = useActiveDenoms()
   const { data, ...state } = useTxVolume(denom, type)
@@ -33,13 +31,8 @@ const TxVolume = () => {
     if (!activeDenoms) return null
     return (
       <Filter>
-        <Select
-          value={denom}
-          onChange={(e) => setDenom(e.target.value)}
-          handleChange={setDenom}
-          small
-        >
-          {sortDenoms(activeDenoms, currency)
+        <Select value={denom} onChange={(e) => setDenom(e.target.value)} small>
+          {sortDenoms(activeDenoms, currency.id)
             .filter(isDenomTerraNative)
             .map((denom) => (
               <option value={denom} key={denom}>

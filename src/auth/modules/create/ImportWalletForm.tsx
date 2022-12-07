@@ -44,7 +44,7 @@ const ImportWalletForm = () => {
 
       addWallet({ name, password, address, key: Buffer.from(pk, "hex") })
       connect(name)
-      navigate("/wallet")
+      navigate("/")
     } catch (error) {
       setError(error as Error)
     }

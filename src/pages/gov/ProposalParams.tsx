@@ -5,9 +5,9 @@ import { Card } from "components/layout"
 import DataList from "./components/DataList"
 import { isWallet } from "auth"
 
-const ProposalParams = () => {
+const ProposalParams = ({ chain }: { chain: string }) => {
   const { t } = useTranslation()
-  const { data: tallyParams, ...state } = useTallyParams()
+  const { data: tallyParams, ...state } = useTallyParams(chain)
 
   const render = () => {
     if (!tallyParams) return null

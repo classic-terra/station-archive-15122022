@@ -54,7 +54,9 @@ const SendPage = () => {
   const balances = useBankBalance()
   const { data: prices } = useMemoizedPrices()
   const readNativeDenom = useNativeDenoms()
-  const { route } = useWalletRoute() as unknown as { route: { denom?: string } }
+  const { route } = useWalletRoute() as unknown as {
+    route: { denom?: string }
+  }
   const availableAssets = useMemo(
     () =>
       Object.values(
@@ -117,6 +119,13 @@ const SendPage = () => {
       setValue("address", recipient)
     }
   }, [form, recipient, setValue])
+
+  /* resolve source chain */
+  useEffect(() => {
+    if (availableChains?.length) {
+      setValue("chain", availableChains[0])
+    }
+  }, [asset]) // eslint-disable-line
 
   /* render detected destination chain */
   function renderDestinationChain() {

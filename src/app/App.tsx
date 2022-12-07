@@ -1,6 +1,6 @@
 import { AccAddress } from "@terra-money/terra.js"
 import { getErrorMessage } from "utils/error"
-import Layout, { Page } from "components/layout"
+import Layout, { MainContainer, Page } from "components/layout"
 import { Banner, Content, Header, Actions, Sidebar } from "components/layout"
 import { ErrorBoundary, Wrong } from "components/feedback"
 import { useNavigate } from "react-router-dom"
@@ -17,7 +17,7 @@ import Nav from "./sections/Nav"
 import Aside from "./sections/Aside"
 
 /* header */
-import IsClassicNetwork from "./sections/IsClassicNetwork"
+import NetworkHeader from "./sections/NetworkHeader"
 import Refresh from "./sections/Refresh"
 import Preferences from "./sections/Preferences"
 import SelectTheme from "./sections/SelectTheme"
@@ -53,6 +53,7 @@ import {
   parsePayload,
 } from "../utils/data"
 import { SendPayload } from "../types/components"
+import Wallet from "pages/wallet/Wallet"
 
 const App = () => {
   const { element: routes } = useNav()
@@ -233,7 +234,7 @@ const App = () => {
       </Sidebar>
 
       <Header>
-        {!isWallet.mobile() && <IsClassicNetwork />}
+        {!isWallet.mobile() && <NetworkHeader />}
 
         <Actions>
           <DevTools />
@@ -254,7 +255,12 @@ const App = () => {
 
       <Content>
         <ErrorBoundary fallback={fallback}>
-          <InitBankBalance>{routes}</InitBankBalance>
+          <InitBankBalance>
+            <MainContainer>
+              <Page>{routes}</Page>
+              <Wallet />
+            </MainContainer>
+          </InitBankBalance>
         </ErrorBoundary>
       </Content>
 

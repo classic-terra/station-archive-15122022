@@ -1,9 +1,8 @@
 import { useTranslation } from "react-i18next"
 import { AccAddress, Dec } from "@terra-money/terra.js"
 import { getMaxHeightStyle } from "utils/style"
-import { useCurrency } from "data/settings/Currency"
 import { combineState } from "data/query"
-import { useMemoizedCalcValue } from "data/queries/oracle"
+import { useMemoizedCalcValue } from "data/queries/coingecko"
 import { calcUnbondingsTotal, flattenUnbondings } from "data/queries/staking"
 import { useValidators, useUnbondings } from "data/queries/staking"
 import { ValidatorLink } from "components/general"
@@ -16,8 +15,7 @@ import is from "auth/scripts/is"
 
 const Unbondings = () => {
   const { t } = useTranslation()
-  const currency = useCurrency()
-  const calcValue = useMemoizedCalcValue(currency)
+  const calcValue = useMemoizedCalcValue()
 
   const { data: validators, ...validatorsState } = useValidators()
   const { data: unbondings, ...unbondingsState } = useUnbondings()

@@ -1,15 +1,16 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import UsbIcon from "@mui/icons-material/Usb"
-import { LedgerKey } from "@terra-money/ledger-terra-js"
+import { LedgerKey } from "@terra-money/ledger-station-js"
 import BluetoothTransport from "@ledgerhq/hw-transport-web-ble"
 import { LEDGER_TRANSPORT_TIMEOUT } from "config/constants"
 import { Form, FormError, FormItem, FormWarning } from "components/form"
 import { Checkbox, Input, Submit } from "components/form"
 import validate from "../scripts/validate"
 import useAuth from "../hooks/useAuth"
+import { isBleAvailable } from "utils/ledger"
 
 interface Values {
   index: number
@@ -22,6 +23,12 @@ const AccessWithLedgerForm = () => {
   const { connectLedger } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error>()
+
+  /* check bluetooth availability */
+  const [bleAvailable, setBleAvailable] = useState(false)
+  useEffect(() => {
+    isBleAvailable().then(setBleAvailable)
+  }, [])
 
   /* form */
   const form = useForm<Values>({
@@ -42,9 +49,9 @@ const AccessWithLedgerForm = () => {
         ? await BluetoothTransport.create(LEDGER_TRANSPORT_TIMEOUT)
         : undefined
 
-      const { accAddress } = await LedgerKey.create(transport, index)
-      connectLedger(accAddress, index, bluetooth)
-      navigate("/wallet", { replace: true })
+      const key = await LedgerKey.create(transport, index)
+      connectLedger(key.accAddress("terra"), index, bluetooth)
+      navigate("/", { replace: true })
     } catch (error) {
       setError(error as Error)
     } finally {
@@ -72,9 +79,11 @@ const AccessWithLedgerForm = () => {
 
         {index !== 0 && <FormWarning>{t("Default index is 0")}</FormWarning>}
 
-        <Checkbox {...register("bluetooth")} checked={bluetooth}>
-          Use Bluetooth
-        </Checkbox>
+        {bleAvailable && (
+          <Checkbox {...register("bluetooth")} checked={bluetooth}>
+            Use Bluetooth
+          </Checkbox>
+        )}
       </FormItem>
 
       {error && <FormError>{error.message}</FormError>}

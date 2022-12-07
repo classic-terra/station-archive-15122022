@@ -63,7 +63,12 @@ export const queryKey = mirror({
   },
   ibc: { denomTrace: "" },
   market: { params: "" },
-  oracle: { activeDenoms: "", exchangeRates: "", params: "" },
+  coingecko: {
+    activeDenoms: "",
+    exchangeRates: "",
+    params: "",
+    supportedFiat: "",
+  },
   tendermint: { nodeInfo: "" },
   staking: {
     validators: "",

@@ -11,6 +11,7 @@ import { Empty } from "components/feedback"
 import HistoryItem from "./HistoryItem"
 import { isWallet } from "auth"
 import PageLoading from "auth/modules/PageLoading"
+import ChainFilter from "components/layout/ChainFilter"
 
 const HistoryList = () => {
   const { t } = useTranslation()
@@ -66,26 +67,37 @@ const HistoryList = () => {
     if (address && !data)
       return isWallet.mobileNative() ? <PageLoading /> : null
 
-    return !pages.length ? (
-      <Card>
-        <Empty />
-      </Card>
-    ) : (
-      <Col>
-        {pages.map(({ list }, i) => (
-          <Fragment key={i}>
-            {list.map((item) => (
-              <HistoryItem {...item} key={item.txhash} />
-            ))}
-          </Fragment>
-        ))}
+    return (
+      <ChainFilter all outside>
+        {(chain) =>
+          !pages.length ? (
+            <Card>
+              <Empty />
+            </Card>
+          ) : (
+            <Col>
+              {pages.map(({ list }, i) => (
+                <Fragment key={i}>
+                  {list.map((item) => (
+                    // TODO: remove hardcoded chain
+                    <HistoryItem
+                      {...item}
+                      chain={"phoenix-1"}
+                      key={item.txhash}
+                    />
+                  ))}
+                </Fragment>
+              ))}
 
-        {isWallet.mobile() ? (
-          <div className="row bottom">{moreButton}</div>
-        ) : (
-          moreButton
-        )}
-      </Col>
+              {isWallet.mobile() ? (
+                <div className="row bottom">{moreButton}</div>
+              ) : (
+                moreButton
+              )}
+            </Col>
+          )
+        }
+      </ChainFilter>
     )
   }
 

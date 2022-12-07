@@ -26,7 +26,7 @@ const DefaultCustomTokens = { mainnet: DefaultCustomTokensItem }
 
 export const DefaultSettings = {
   [SettingKey.Theme]: DefaultTheme,
-  [SettingKey.Currency]: "uusd",
+  [SettingKey.Currency]: { id: "usd", unit: "$", name: "US Dollar" },
   [SettingKey.CustomNetworks]: [] as CustomNetwork[],
   [SettingKey.GasAdjustment]: DEFAULT_GAS_ADJUSTMENT,
   [SettingKey.ClassicGasAdjustment]: CLASSIC_DEFAULT_GAS_ADJUSTMENT,
