@@ -18,6 +18,7 @@ import {
   getQuickStakeMsgs,
   getQuickUnstakeMsgs,
 } from "data/queries/staking"
+import { useNativeDenoms } from "data/token"
 
 interface TxValues {
   input?: number
@@ -43,6 +44,7 @@ const QuickStakeForm = (props: Props) => {
   const address = useAddress()
   const chains = useChains()
   const { baseAsset } = chains[chainID]
+  const readNativeDenom = useNativeDenoms()
 
   /* tx context */
   const initialGasDenom = getInitialGasDenom()
@@ -61,16 +63,19 @@ const QuickStakeForm = (props: Props) => {
   const createTx = useCallback(
     ({ input }: TxValues) => {
       if (!address) return
-      const amount = toAmount(input)
+
       const coin = new Coin(baseAsset, amount)
+      const { decimals } = readNativeDenom(baseAsset)
+      console.log("decimals", decimals)
 
       const msgs =
         tab === QuickStakeAction.DELEGATE
-          ? getQuickStakeMsgs(address, coin, destinations)
+          ? getQuickStakeMsgs(address, coin, destinations, decimals)
           : getQuickUnstakeMsgs(address, coin, delegations)
+      console.log("msgs", msgs)
       return { msgs, chainID }
     },
-    [address, tab, amount]
+    [tab, amount]
   )
 
   /* fee */

@@ -17,6 +17,7 @@ import { has } from "utils/num"
 import { StakeAction } from "txs/stake/StakeForm"
 import { queryKey, Pagination, RefetchOptions } from "../query"
 import { useAddress } from "../wallet"
+import { toAmount } from "@terra.kitchen/utils"
 // import { useElimSlashedVals } from "./distribution"
 // import { useLatestBlock } from "./tendermint"
 import { useInterchainLCDClient, useLCDClient } from "./lcdClient"
@@ -263,34 +264,35 @@ export const sumEntries = (entries: UnbondingDelegation.Entry[]) =>
 
 /* quick staking helpers */
 
-// TODO: update both to accept non uluna denoms
 export const getQuickStakeMsgs = (
   address: string,
   coin: Coin,
-  elgibleVals: ValAddress[]
+  elgibleVals: ValAddress[],
+  decimals: number
 ) => {
   const { denom, amount } = coin.toData()
-  const bnAmt = new BigNumber(amount)
-  const numOfValDests = bnAmt.isLessThan(100 * 10e6)
+  const totalAmt = new BigNumber(amount)
+  const isLessThanAmt = (amt: number) =>
+    totalAmt.isLessThan(toAmount(amt, { decimals }))
+
+  const numOfValDests = isLessThanAmt(100)
     ? 1
-    : bnAmt.isLessThan(1000 * 10e6)
+    : isLessThanAmt(1000)
     ? 2
-    : bnAmt.isLessThan(10000 * 10e6)
+    : isLessThanAmt(10000)
     ? 3
     : 4
 
-  const destVals = shuffle(elgibleVals).slice(0, numOfValDests)
+  const destVals = shuffle(elgibleVals).slice(0, numOfValDests - 1)
 
   const msgs = destVals.map(
     (valDest) =>
       new MsgDelegate(
         address,
         valDest,
-        new Coin(denom, bnAmt.dividedToIntegerBy(destVals.length).toString())
+        new Coin(denom, totalAmt.dividedToIntegerBy(destVals.length).toString())
       )
   )
-  console.log("STAKE MSGS", msgs)
-
   return msgs
 }
 
@@ -308,7 +310,6 @@ export const getQuickUnstakeMsgs = (
   for (const delegation of delegations) {
     const { balance, delegator_address } = delegation
     const delAmt = new BigNumber(balance.amount.toString())
-    console.log("delAmt", delAmt)
     msgs.push(
       new MsgUndelegate(
         address,

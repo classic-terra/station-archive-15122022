@@ -23,7 +23,6 @@ const Tabs = ({
   reversed,
   state,
 }: Props) => {
-  console.log("fullWidth", fullWidth)
   const initial = defaultActiveKey ?? tabs[0].key
   const navigate = useNavigate()
   const location = useLocation()
