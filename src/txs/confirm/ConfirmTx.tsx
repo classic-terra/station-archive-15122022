@@ -10,7 +10,7 @@ import { latestTxState } from "../../data/queries/tx"
 const ConfirmTx = () => {
   const { state }: { state: any } = useLocation()
   const [latestTx, setLatestTx] = useRecoilState(latestTxState)
-  const { txhash } = latestTx
+  const { txhash, chainID } = latestTx
 
   const [action, setAction] = useState<string>("")
 
@@ -26,7 +26,7 @@ const ConfirmTx = () => {
 
   useEffect(() => {
     if (txhash) {
-      setLatestTx({ txhash: "" })
+      setLatestTx({ txhash: "", chainID: "" })
     }
   }, [])
 

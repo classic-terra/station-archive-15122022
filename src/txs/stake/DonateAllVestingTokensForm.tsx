@@ -7,6 +7,7 @@ import { Account, parseVestingSchedule } from "data/queries/vesting"
 import { Form, FormItem, Input } from "components/form"
 import { toInput } from "txs/utils"
 import Tx, { getInitialGasDenom } from "../Tx"
+import { useBankBalance } from "../../data/queries/bank"
 
 const DonateAllVestingTokensForm = ({ account }: { account: Account }) => {
   const { t } = useTranslation()

@@ -3,7 +3,6 @@ import { isWallet } from "auth"
 
 /* connect */
 import UnlockPage from "./select/UnlockPage"
-import SelectLedgerPage from "../ledger/SelectLedgerPage"
 import AddLedgerPage from "../ledger/AddLedgerPage"
 
 /* create */
@@ -27,12 +26,7 @@ const Auth = () => {
 
       {/* connect */}
       <Route path="unlock/:name" element={<UnlockPage />} />
-      <Route
-        path="ledger/device"
-        element={
-          isWallet.mobile() ? <SelectLedgerPage /> : <AccessWithLedgerPage />
-        }
-      />
+      <Route path="ledger/device" element={<AccessWithLedgerPage />} />
       <Route path="ledger/add" element={<AddLedgerPage />} />
 
       {/* create */}

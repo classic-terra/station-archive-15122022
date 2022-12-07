@@ -241,10 +241,7 @@ function Tx<TxValues>(props: Props<TxValues>) {
   }, [decimals, isMax, max, onChangeMax])
 
   /* tax */
-  const taxAmount =
-    token && amount && shouldTax
-      ? calcMinimumTaxAmount(amount, { rate, cap })
-      : undefined
+  const taxAmount = undefined
 
   /* (effect): Log error on console */
   const failed = getErrorMessage(taxState.error ?? estimatedGasState.error)
@@ -327,7 +324,12 @@ function Tx<TxValues>(props: Props<TxValues>) {
         }
       } else {
         const { result } = await post({ ...tx, fee, isClassic })
-        setLatestTx({ txhash: result.txhash, queryKeys, redirectAfterTx })
+        setLatestTx({
+          txhash: result.txhash,
+          queryKeys,
+          redirectAfterTx,
+          chainID: network.chainID,
+        })
       }
 
       onPost?.()
@@ -513,6 +515,7 @@ function Tx<TxValues>(props: Props<TxValues>) {
     : false
 
   const availableGasDenoms = useMemo(() => {
+    // @ts-expect-error
     return sortCoins(bankBalance, currency)
       .map(({ denom }) => denom)
       .filter(
@@ -553,10 +556,6 @@ function Tx<TxValues>(props: Props<TxValues>) {
   const renderFee = (descriptions?: Contents) => {
     if (!estimatedGas) return null
 
-    const renderTaxes = sortCoins(taxes ?? new Coins(), currency).filter(
-      ({ amount }) => has(amount)
-    )
-
     return (
       <Details>
         <dl>
@@ -567,29 +566,12 @@ function Tx<TxValues>(props: Props<TxValues>) {
             </Fragment>
           ))}
 
-          {!!isClassic && (
-            <>
-              <dt>{t("Tax")}</dt>
-              <dd>
-                {renderTaxes.map((coin) => (
-                  <p key={coin.denom}>
-                    <Read {...coin} />
-                  </p>
-                ))}
-                {!renderTaxes.length && (
-                  <Read amount="0" token={token} decimals={decimals} />
-                )}
-              </dd>
-            </>
-          )}
-
           <dt className={styles.gas}>
             {t("Fee")}
             {availableGasDenoms.length > 1 && (
               <Select
                 value={gasDenom}
                 onChange={(e) => setGasDenom(e.target.value)}
-                handleChange={(value) => setGasDenom(value)}
                 className={styles.select}
                 small
               >
@@ -839,10 +821,8 @@ function Tx<TxValues>(props: Props<TxValues>) {
 export default Tx
 
 /* utils */
-export const getInitialGasDenom = (bankBalance: Coins) => {
-  const denom = head(sortCoins(bankBalance))?.denom ?? "uusd"
-  const uusd = getAmount(bankBalance, "uusd")
-  return has(uusd) ? "uusd" : denom
+export const getInitialGasDenom = () => {
+  return "uluna"
 }
 
 interface Params {

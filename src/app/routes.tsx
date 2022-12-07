@@ -58,7 +58,6 @@ import NotFound from "pages/NotFound"
 import DonateAllVestingTokensTx from "txs/stake/DonateAllVestingTokensTx"
 
 /* Deep Link */
-import SelectSend from "txs/send/SelectSend"
 import WalletSettings from "../auth/modules/manage/WalletSettings"
 
 const ICON_SIZE = { width: 20, height: 20 }
@@ -125,11 +124,6 @@ export const useNav = () => {
   ]
 
   const subPage = [
-    {
-      path: "/send/select",
-      title: "Select a coin to send",
-      element: <SelectSend />,
-    },
     {
       path: "/confirm",
       title: "Confirm",
