@@ -1,4 +1,4 @@
-import { Tabs } from "components/layout"
+import { Tabs, ChainFilter } from "components/layout"
 import Validators from "./Validators"
 import QuickStake from "./QuickStake"
 import { useTranslation } from "react-i18next"

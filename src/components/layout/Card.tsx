@@ -15,6 +15,7 @@ export interface Props extends QueryState {
   /* customize */
   size?: "small"
   bordered?: boolean
+  muteBg?: boolean
   bg?: boolean
 
   className?: string
@@ -31,13 +32,15 @@ export interface Props extends QueryState {
 
 const Card = (props: PropsWithChildren<Props>) => {
   const { title, extra, children, onClick, to, href } = props
-  const { size, bordered, bg, disabled, className, mainClassName } = props
+  const { size, bordered, muteBg, disabled, className, mainClassName, bg } =
+    props
 
   return (
     <WithFetching {...props} height={2}>
       {(progress, wrong) => {
         const style = {
           bordered,
+          muteBg,
           bg,
           default: !bordered,
           grid: (title || extra) && (children || wrong),

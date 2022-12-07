@@ -23,9 +23,7 @@ const Stake = () => {
     >
       <Col>
         <Row>{interchainDelegations.length && <StakedDonut />}</Row>
-        <Card>
-          <StakeTabs />
-        </Card>
+        <StakeTabs />
       </Col>
     </Page>
   )

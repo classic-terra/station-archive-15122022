@@ -75,6 +75,7 @@ export const queryKey = mirror({
     validator: "",
     interchainDelegations: "",
     interchainValidators: "",
+    interchainDelegation: "",
     delegations: "",
     delegation: "",
     unbondings: "",

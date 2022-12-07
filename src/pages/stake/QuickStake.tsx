@@ -1,12 +1,9 @@
 // import QuickStakeActionSelector from "./QuickStakeActionSelector"
 // import QuickStakeForm, { QuickStakeAction } from "txs/stake/QuickStakeForm"
-import {
-  useDelegations,
-  getQuickStakeEligibleVals,
-  useInterchainValidators,
-} from "data/queries/staking"
+import { useDelegations } from "data/queries/staking"
 import { useBalances } from "data/queries/bank"
-import { Card, ChainFilter, Page, ButtonFilter } from "components/layout"
+import { Card, ChainFilter, ButtonFilter } from "components/layout"
+import QuickStakeForm from "txs/stake/QuickStakeForm"
 
 export enum QuickStakeAction {
   DELEGATE = "delegate",
@@ -14,18 +11,36 @@ export enum QuickStakeAction {
 }
 
 const QuickStake = () => {
+  const renderQuickStakeForm = (
+    chainID: string | undefined,
+    action: string | undefined
+  ) => {
+    if (!(balances && chainID && action)) return null
+    const props = {
+      action,
+      balances,
+      chainID,
+    }
+    return <QuickStakeForm {...props} />
+  }
+
   const { data: balances } = useBalances()
-  const { data: delegations } = useDelegations()
 
   return (
-    <ButtonFilter
-      title="Select Actions"
-      actions={[QuickStakeAction.DELEGATE, QuickStakeAction.UNBOND]}
-    >
-      {(action) => (
-        <ChainFilter outside>{(chainID) => <Card>{chainID}</Card>}</ChainFilter>
-      )}
-    </ButtonFilter>
+    <Card>
+      <ButtonFilter
+        title="Select action"
+        actions={[QuickStakeAction.DELEGATE, QuickStakeAction.UNBOND]}
+      >
+        {(action) => (
+          <Card muteBg>
+            <ChainFilter outside>
+              {(chainID) => renderQuickStakeForm(chainID, action)}
+            </ChainFilter>
+          </Card>
+        )}
+      </ButtonFilter>
+    </Card>
   )
 }
 

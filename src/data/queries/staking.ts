@@ -1,8 +1,18 @@
 import { useQuery, useQueries, UseQueryResult } from "react-query"
 import { flatten, path, uniqBy } from "ramda"
 import BigNumber from "bignumber.js"
-import { AccAddress, ValAddress, Validator } from "@terra-money/terra.js"
-import { Delegation, UnbondingDelegation } from "@terra-money/terra.js"
+import {
+  AccAddress,
+  ValAddress,
+  Validator,
+  Coin,
+} from "@terra-money/feather.js"
+import {
+  Delegation,
+  UnbondingDelegation,
+  MsgDelegate,
+  MsgUndelegate,
+} from "@terra-money/feather.js"
 /* FIXME(terra.js): Import from terra.js */
 import { BondStatus } from "@terra-money/terra.proto/cosmos/staking/v1beta1/staking"
 import { has } from "utils/num"
@@ -15,6 +25,7 @@ import { readAmount } from "@terra.kitchen/utils"
 import { useMemoizedPrices } from "data/queries/coingecko"
 import { useNativeDenoms } from "data/token"
 import shuffle from "utils/shuffle"
+import { toAmount } from "@terra.kitchen/utils"
 
 export const useValidators = () => {
   const lcd = useLCDClient()
@@ -78,17 +89,10 @@ export const useInterchainDelegations = () => {
           )
 
           const delegation = delegations.filter(
-            ({ balance }: { balance: any }) => {
-              return has(balance.amount.toString())
-            }
+            ({ balance }: { balance: any }) => has(balance.amount.toString())
           )
 
-          console.log(
-            "🚀 ~ file: staking.ts ~ line 67 ~ queryFn: ~ delegation",
-            delegation
-          )
           validatorList.push(...delegation)
-
           return { delegation, chainName }
         },
       }
@@ -141,6 +145,25 @@ export const useDelegation = (validatorAddress: ValAddress) => {
           validatorAddress
         )
         return delegation
+      } catch {
+        return
+      }
+    },
+    { ...RefetchOptions.DEFAULT }
+  )
+}
+
+export const useInterchainDelegation = () => {
+  const address = useAddress()
+  const lcd = useInterchainLCDClient()
+
+  return useQuery(
+    [queryKey.staking.interchainDelegation, address],
+    async () => {
+      if (!address) return
+      try {
+        const [delegations] = await lcd.staking.delegations(address)
+        return delegations
       } catch {
         return
       }
@@ -367,6 +390,74 @@ export const getTotalStakedTokens = (validators: Validator[]) => {
     ...validators.map(({ tokens = 0 }) => Number(tokens))
   ).toNumber()
   return total
+}
+
+export const getQuickStakeMsgs = (
+  address: string,
+  coin: Coin,
+  elgibleVals: ValAddress[],
+  decimals: number
+) => {
+  const { denom, amount } = coin.toData()
+  const totalAmt = new BigNumber(amount)
+  const isLessThanAmt = (amt: number) =>
+    totalAmt.isLessThan(toAmount(amt, { decimals }))
+
+  const numOfValDests = isLessThanAmt(100)
+    ? 1
+    : isLessThanAmt(1000)
+    ? 2
+    : isLessThanAmt(10000)
+    ? 3
+    : 4
+
+  const destVals = shuffle(elgibleVals).slice(0, numOfValDests - 1)
+
+  const msgs = destVals.map(
+    (valDest) =>
+      new MsgDelegate(
+        address,
+        valDest,
+        new Coin(denom, totalAmt.dividedToIntegerBy(destVals.length).toString())
+      )
+  )
+  return msgs
+}
+
+//  choose random val and undelegate amount and if not matchign amount add next random validator until remainder of desired stake is met
+export const getQuickUnstakeMsgs = (
+  address: string,
+  coin: Coin,
+  delegations: Delegation[]
+) => {
+  const { denom, amount } = coin.toData()
+  const bnAmt = new BigNumber(amount)
+  const msgs = []
+  let remaining = bnAmt
+
+  for (const delegation of delegations) {
+    const { balance, delegator_address } = delegation
+    const delAmt = new BigNumber(balance.amount.toString())
+    msgs.push(
+      new MsgUndelegate(
+        address,
+        delegator_address,
+        new Coin(
+          denom,
+          remaining.lt(delAmt) ? remaining.toString() : bnAmt.toString()
+        )
+      )
+    )
+    if (remaining.lt(delAmt)) {
+      remaining = new BigNumber(0)
+    } else {
+      remaining = remaining.minus(delAmt)
+    }
+    if (remaining.isZero()) {
+      break
+    }
+  }
+  return msgs
 }
 
 /* unbonding */
