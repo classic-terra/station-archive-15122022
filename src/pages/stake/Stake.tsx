@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { LinkButton } from "components/general"
-import { Col, Page, Row } from "components/layout"
-import Staked from "./Staked"
-import Validators from "./Validators"
+import { Card, Col, Page, Row } from "components/layout"
+import StakeTabs from "./StakeTabs"
 import StakedDonut from "./StakedDonut"
 import { useInterchainDelegations } from "data/queries/staking"
 
@@ -23,15 +22,10 @@ const Stake = () => {
       }
     >
       <Col>
-        {interchainDelegations.length ? (
-          <Row>
-            <StakedDonut />
-            <Staked />
-          </Row>
-        ) : (
-          <Staked />
-        )}
-        <Validators />
+        <Row>{interchainDelegations.length && <StakedDonut />}</Row>
+        <Card>
+          <StakeTabs />
+        </Card>
       </Col>
     </Page>
   )

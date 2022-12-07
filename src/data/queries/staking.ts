@@ -14,6 +14,7 @@ import { useInterchainAddresses } from "auth/hooks/useAddress"
 import { readAmount } from "@terra.kitchen/utils"
 import { useMemoizedPrices } from "data/queries/coingecko"
 import { useNativeDenoms } from "data/token"
+import shuffle from "utils/shuffle"
 
 export const useValidators = () => {
   const lcd = useLCDClient()
@@ -40,6 +41,20 @@ export const useValidators = () => {
       })
 
       return uniqBy(path(["operator_address"]), [...v1, ...v2, ...v3])
+    },
+    { ...RefetchOptions.INFINITY }
+  )
+}
+
+export const useInterchainValidators = (chain: string) => {
+  const lcd = useInterchainLCDClient()
+  return useQuery(
+    [queryKey.staking.interchainValidators, chain],
+    async () => {
+      const [Validators] = await lcd.staking.validators(chain, {
+        ...Pagination,
+      })
+      return Validators
     },
     { ...RefetchOptions.INFINITY }
   )
@@ -317,6 +332,41 @@ export const useCalcInterchainDelegationsTotal = (
   }))
 
   return { currencyTotal, tableData: { all: allData, ...tableDataByChain } }
+}
+/* Quick stake helpers */
+export const getQuickStakeEligibleVals = (validators: Validator[]) => {
+  const MAX_COMMISSION = 0.05
+  const VOTE_POWER_INCLUDE = 0.65
+
+  const totalStaked = getTotalStakedTokens(validators)
+  const vals = validators
+    .map((v) => ({ ...v, votingPower: Number(v.tokens) / totalStaked }))
+    .filter(
+      ({ commission }) =>
+        Number(commission.commission_rates.rate) <= MAX_COMMISSION
+    )
+    .sort((a, b) => a.votingPower - b.votingPower) // least to greatest
+    .reduce(
+      (acc, cur) => {
+        acc.sumVotePower += cur.votingPower
+        if (acc.sumVotePower < VOTE_POWER_INCLUDE) {
+          acc.elgible.push(cur.operator_address)
+        }
+        return acc
+      },
+      {
+        sumVotePower: 0,
+        elgible: [] as ValAddress[],
+      }
+    )
+  return shuffle(vals.elgible)
+}
+
+export const getTotalStakedTokens = (validators: Validator[]) => {
+  const total = BigNumber.sum(
+    ...validators.map(({ tokens = 0 }) => Number(tokens))
+  ).toNumber()
+  return total
 }
 
 /* unbonding */
