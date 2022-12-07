@@ -17,8 +17,8 @@ import { has } from "utils/num"
 import { StakeAction } from "txs/stake/StakeForm"
 import { queryKey, Pagination, RefetchOptions } from "../query"
 import { useAddress } from "../wallet"
-import { useElimSlashedVals } from "./distribution"
-import { useLatestBlock } from "./tendermint"
+// import { useElimSlashedVals } from "./distribution"
+// import { useLatestBlock } from "./tendermint"
 import { useInterchainLCDClient, useLCDClient } from "./lcdClient"
 import shuffle from "utils/shuffle"
 
@@ -266,9 +266,10 @@ export const sumEntries = (entries: UnbondingDelegation.Entry[]) =>
 // TODO: update both to accept non uluna denoms
 export const getQuickStakeMsgs = (
   address: string,
-  amount: string,
+  coin: Coin,
   elgibleVals: ValAddress[]
 ) => {
+  const { denom, amount } = coin.toData()
   const bnAmt = new BigNumber(amount)
   const numOfValDests = bnAmt.isLessThan(100 * 10e6)
     ? 1
@@ -285,47 +286,47 @@ export const getQuickStakeMsgs = (
       new MsgDelegate(
         address,
         valDest,
-        new Coin("uluna", bnAmt.dividedToIntegerBy(destVals.length).toString())
+        new Coin(denom, bnAmt.dividedToIntegerBy(destVals.length).toString())
       )
   )
+  console.log("STAKE MSGS", msgs)
+
   return msgs
 }
 
 //  choose random val and undelegate amount and if not matchign amount add next random validator until remainder of desired stake is met
 export const getQuickUnstakeMsgs = (
   address: string,
-  amount: string,
+  coin: Coin,
   delegations: Delegation[]
 ) => {
+  const { denom, amount } = coin.toData()
   const bnAmt = new BigNumber(amount)
-  const unstakeMsgs = []
+  const msgs = []
   let remaining = bnAmt
 
   for (const delegation of delegations) {
-    const delAmt = new BigNumber(delegation.balance.amount.toString())
-    if (remaining.lt(delAmt)) {
-      unstakeMsgs.push(
-        new MsgUndelegate(
-          address,
-          delegation.delegator_address,
-          new Coin("uluna", remaining.toString())
+    const { balance, delegator_address } = delegation
+    const delAmt = new BigNumber(balance.amount.toString())
+    console.log("delAmt", delAmt)
+    msgs.push(
+      new MsgUndelegate(
+        address,
+        delegator_address,
+        new Coin(
+          denom,
+          remaining.lt(delAmt) ? remaining.toString() : bnAmt.toString()
         )
       )
+    )
+    if (remaining.lt(delAmt)) {
       remaining = new BigNumber(0)
     } else {
-      unstakeMsgs.push(
-        new MsgUndelegate(
-          address,
-          delegation.delegator_address,
-          new Coin("uluna", bnAmt.toString())
-        )
-      )
       remaining = remaining.minus(delAmt)
     }
     if (remaining.isZero()) {
       break
     }
   }
-
-  return unstakeMsgs
+  return msgs
 }

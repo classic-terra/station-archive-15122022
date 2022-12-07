@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useForm } from "react-hook-form"
-import { ValAddress, Delegation } from "@terra-money/feather.js"
+import { ValAddress, Delegation, Coin } from "@terra-money/feather.js"
 import { toAmount } from "@terra.kitchen/utils"
 import { getAmount } from "utils/coin"
 import { queryKey } from "data/query"
@@ -11,6 +11,7 @@ import { Form, FormItem, FormWarning, Input } from "components/form"
 import { getPlaceholder, toInput } from "../utils"
 import validate from "../validate"
 import InterchainTx from "../InterchainTx"
+import { useChains } from "data/queries/chains"
 import { getInitialGasDenom } from "../Tx"
 import {
   calcDelegationsTotal,
@@ -40,6 +41,8 @@ const QuickStakeForm = (props: Props) => {
 
   const { t } = useTranslation()
   const address = useAddress()
+  const chains = useChains()
+  const { baseAsset } = chains[chainID]
 
   /* tx context */
   const initialGasDenom = getInitialGasDenom()
@@ -59,32 +62,24 @@ const QuickStakeForm = (props: Props) => {
     ({ input }: TxValues) => {
       if (!address) return
       const amount = toAmount(input)
-      const msgs = getQuickStakeMsgs(address, amount, destinations)
+      const coin = new Coin(baseAsset, amount)
 
-      if (tab === QuickStakeAction.DELEGATE) {
-        const msgs = getQuickStakeMsgs(address, amount, destinations)
-      }
-
-      if (tab === QuickStakeAction.UNBOND) {
-        getQuickUnstakeMsgs(address, amount, delegations)
-        return { msgs, chainID }
-      }
+      const msgs =
+        tab === QuickStakeAction.DELEGATE
+          ? getQuickStakeMsgs(address, coin, destinations)
+          : getQuickUnstakeMsgs(address, coin, delegations)
       return { msgs, chainID }
     },
-    [address, tab]
+    [address, tab, amount]
   )
 
   /* fee */
   const balance = {
-    [QuickStakeAction.DELEGATE]: getAmount(balances, "uluna"), // TODO flexible denom
+    [QuickStakeAction.DELEGATE]: getAmount(balances, baseAsset), // TODO flexible denom
     [QuickStakeAction.UNBOND]: calcDelegationsTotal(delegations),
   }[tab]
 
-  const estimationTxValues = useMemo(() => {
-    return {
-      input: toInput(2),
-    }
-  }, [tab])
+  const estimationTxValues = useMemo(() => ({ input: toInput(2) }), [tab])
 
   const onChangeMax = useCallback(
     async (input: number) => {
@@ -94,7 +89,7 @@ const QuickStakeForm = (props: Props) => {
     [setValue, trigger]
   )
 
-  const token = tab === QuickStakeAction.DELEGATE ? "uluna" : ""
+  const token = tab === QuickStakeAction.DELEGATE ? baseAsset : ""
 
   const tx = {
     token,

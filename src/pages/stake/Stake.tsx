@@ -17,10 +17,7 @@ const Stake = () => {
         </LinkButton>
       }
     >
-      {" "}
-      <div className={styles.stake__options}>
-        <StakeOptions />
-      </div>
+      <StakeOptions />
     </Page>
   )
 }
