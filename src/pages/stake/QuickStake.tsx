@@ -1,6 +1,3 @@
-// import QuickStakeActionSelector from "./QuickStakeActionSelector"
-// import QuickStakeForm, { QuickStakeAction } from "txs/stake/QuickStakeForm"
-import { useDelegations } from "data/queries/staking"
 import { useBalances } from "data/queries/bank"
 import { Card, ChainFilter, ButtonFilter } from "components/layout"
 import QuickStakeForm from "txs/stake/QuickStakeForm"

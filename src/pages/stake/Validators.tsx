@@ -10,12 +10,13 @@ import { bondStatusFromJSON } from "@terra-money/terra.proto/cosmos/staking/v1be
 import { combineState, useIsClassic } from "data/query"
 import { useValidators } from "data/queries/staking"
 import { useDelegations, useUnbondings } from "data/queries/staking"
-import { getCalcVotingPowerRate } from "data/Terra/TerraAPI"
+import { getCalcVotingPowerRate, getChainIsTerra } from "data/Terra/TerraAPI"
 import { useTerraValidators } from "data/Terra/TerraAPI"
-import { Page, Card, Table, Flex, Grid } from "components/layout"
+import { Page, Card, Table, Flex, Grid, ChainFilter } from "components/layout"
 import { TooltipIcon } from "components/display"
 import { Toggle } from "components/form"
 import { Read } from "components/token"
+import InterchainValidators from "./InterchainValidators"
 import WithSearchInput from "pages/custom/WithSearchInput"
 import ProfileIcon from "./components/ProfileIcon"
 import Uptime from "./components/Uptime"
@@ -38,6 +39,8 @@ const Validators = () => {
     undelegationsState,
     TerraValidatorsState
   )
+
+  const [pageState, setPageState] = useState(state)
 
   const activeValidators = useMemo(() => {
     if (!(validators && TerraValidators)) return null
@@ -74,46 +77,20 @@ const Validators = () => {
     return t("{{count}} active validators", { count })
   }
 
-  const [byRank, setByRank] = useState(isClassic)
-  const render = (keyword: string) => {
-    if (!activeValidators) return null
+  // TODO, accept varied chainID
+  const renderInterchainVals = (keyword: string) => (
+    <InterchainValidators
+      keyword={keyword}
+      setPageState={setPageState}
+      chainID={"osmosis-1"}
+    />
+  )
 
+  const [byRank, setByRank] = useState(isClassic)
+  const renderTerraVals = (keyword: string) => {
+    if (!activeValidators) return null
     return (
       <>
-        {isClassic && (
-          <section>
-            <TooltipIcon
-              content={
-                <article>
-                  <ul className={styles.tooltip}>
-                    <li>
-                      40%: Uptime <small>(time-weighted, 90 days)</small>
-                    </li>
-                    <li>
-                      30%: Rewards <small>(past 30 days)</small>
-                    </li>
-                    <li>
-                      30%: Gov participation rate{" "}
-                      <small>(time-weighted, since Col-5)</small>
-                    </li>
-                  </ul>
-
-                  <p>
-                    <small>
-                      Up to 5% is deducted to the validators whose voting power
-                      is within top 33%
-                    </small>
-                  </p>
-                </article>
-              }
-            >
-              <Toggle checked={byRank} onChange={() => setByRank(!byRank)}>
-                {t("Weighted score")}
-              </Toggle>
-            </TooltipIcon>
-          </section>
-        )}
-
         <Table
           key={Number(byRank)}
           onSort={() => setByRank(false)}
@@ -210,40 +187,6 @@ const Validators = () => {
                 readPercent(rate.toString(), { fixed: 2 }),
               align: "right",
             },
-            {
-              title: t("Uptime"),
-              tooltip: t("90 days uptime EMA"),
-              dataIndex: "time_weighted_uptime",
-              defaultSortOrder: "desc",
-              key: "uptime",
-              sorter: (
-                { time_weighted_uptime: a = 0 },
-                { time_weighted_uptime: b = 0 }
-              ) => a - b,
-              render: (value) => !!value && <Uptime>{value}</Uptime>,
-              align: "right",
-              hidden: !isClassic,
-            },
-            {
-              title: t("Rewards"),
-              tooltip: t("Estimated monthly rewards with 100 Luna staked"),
-              dataIndex: "rewards_30d",
-              defaultSortOrder: "desc",
-              key: "rewards",
-              sorter: ({ rewards_30d: a = "0" }, { rewards_30d: b = "0" }) =>
-                Number(a) - Number(b),
-              render: (value) =>
-                !!value && (
-                  <Read
-                    amount={Number(value) * 100}
-                    denom="uluna"
-                    decimals={0}
-                    fixed={6}
-                  />
-                ),
-              align: "right",
-              hidden: !isClassic,
-            },
           ]}
         />
       </>
@@ -252,8 +195,14 @@ const Validators = () => {
 
   return (
     <Page title={t("Validators")} extra={renderCount()} sub>
-      <Card {...state}>
-        <WithSearchInput gap={16}>{render}</WithSearchInput>
+      <Card {...pageState}>
+        <ChainFilter>
+          {(chain) => (
+            <WithSearchInput gap={16}>
+              {getChainIsTerra(chain) ? renderTerraVals : renderInterchainVals}
+            </WithSearchInput>
+          )}
+        </ChainFilter>
       </Card>
     </Page>
   )

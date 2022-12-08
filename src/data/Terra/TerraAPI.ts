@@ -2,7 +2,9 @@ import { useMemo } from "react"
 import { useQuery } from "react-query"
 import axios, { AxiosError } from "axios"
 import BigNumber from "bignumber.js"
-import { OracleParams, ValAddress } from "@terra-money/terra.js"
+import { OracleParams } from "@terra-money/terra.js"
+import { ValAddress, Validator } from "@terra-money/feather.js"
+import { getTotalStakedTokens } from "data/queries/staking"
 import { TerraValidator } from "types/validator"
 import { TerraProposalItem } from "types/proposal"
 import { useNetwork } from "data/wallet"
@@ -135,6 +137,20 @@ export const getCalcVotingPowerRate = (TerraValidators: TerraValidator[]) => {
   }
 }
 
+export const getCalcVotingPowerRateByTokens = (validators: Validator[]) => {
+  const total = getTotalStakedTokens(validators)
+
+  return (address: ValAddress) => {
+    const validator = validators.find(
+      ({ operator_address }) => operator_address === address
+    )
+
+    if (!validator) return
+    const { tokens } = validator
+    return tokens ? Number(tokens) / total : undefined
+  }
+}
+
 export const calcSelfDelegation = (validator?: TerraValidator) => {
   if (!validator) return
   const { self, tokens } = validator
@@ -162,4 +178,8 @@ export const useVotingPowerRate = (address: ValAddress) => {
   }, [address, calcRate])
 
   return { data, ...state }
+}
+
+export const getChainIsTerra = (chain: string | undefined) => {
+  return chain === "phoenix-1" || chain === "pisco-1"
 }

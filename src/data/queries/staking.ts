@@ -59,13 +59,14 @@ export const useValidators = () => {
 
 export const useInterchainValidators = (chain: string) => {
   const lcd = useInterchainLCDClient()
+
   return useQuery(
     [queryKey.staking.interchainValidators, chain],
     async () => {
-      const [Validators] = await lcd.staking.validators(chain, {
+      const [validators] = await lcd.staking.validators(chain, {
         ...Pagination,
       })
-      return Validators
+      return validators
     },
     { ...RefetchOptions.INFINITY }
   )
@@ -386,10 +387,9 @@ export const getQuickStakeEligibleVals = (validators: Validator[]) => {
 }
 
 export const getTotalStakedTokens = (validators: Validator[]) => {
-  const total = BigNumber.sum(
+  return BigNumber.sum(
     ...validators.map(({ tokens = 0 }) => Number(tokens))
   ).toNumber()
-  return total
 }
 
 export const getQuickStakeMsgs = (

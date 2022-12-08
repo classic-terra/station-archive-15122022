@@ -41,7 +41,6 @@ const QuickStakeForm = (props: Props) => {
   const address = useAddress()
   const chains = useChains()
   const vals = useInterchainValidators(chainID)
-  console.log("vals", vals)
   const { data: delegations } = useInterchainDelegation()
   const readNativeDenom = useNativeDenoms()
 

@@ -19,7 +19,6 @@ const LastHeight = () => {
           height ? styles.success : styles.loading
         )}
       />
-
       {height ? (
         <FinderLink className={styles.link} value={height} block>
           #{formatNumber(height, { comma: true })}
