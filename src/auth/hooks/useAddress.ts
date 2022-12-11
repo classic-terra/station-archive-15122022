@@ -1,4 +1,4 @@
-import { useConnectedWallet } from "@terra-money/use-wallet"
+import { useConnectedWallet } from "@classic-terra/use-wallet"
 import useAuth from "./useAuth"
 
 /* auth | walle-provider */

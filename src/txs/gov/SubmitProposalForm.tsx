@@ -3,10 +3,13 @@ import { useTranslation } from "react-i18next"
 import { useFieldArray, useForm } from "react-hook-form"
 import AddIcon from "@mui/icons-material/Add"
 import RemoveIcon from "@mui/icons-material/Remove"
-import { AccAddress, Coins, MsgSubmitProposal } from "@terra-money/terra.js"
-import { TextProposal, CommunityPoolSpendProposal } from "@terra-money/terra.js"
-import { ParameterChangeProposal, ParamChange } from "@terra-money/terra.js"
-import { ExecuteContractProposal } from "@terra-money/terra.js/dist/core/wasm/proposals"
+import { AccAddress, Coins, MsgSubmitProposal } from "@classic-terra/terra.js"
+import {
+  TextProposal,
+  CommunityPoolSpendProposal,
+} from "@classic-terra/terra.js"
+import { ParameterChangeProposal, ParamChange } from "@classic-terra/terra.js"
+import { ExecuteContractProposal } from "@classic-terra/terra.js/dist/core/wasm/proposals"
 import { isDenomTerraNative } from "@terra.kitchen/utils"
 import { readAmount, readDenom, toAmount } from "@terra.kitchen/utils"
 import { SAMPLE_ADDRESS } from "config/constants"

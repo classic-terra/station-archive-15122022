@@ -1,10 +1,10 @@
 import { useQuery } from "react-query"
 import { flatten, path, uniqBy } from "ramda"
 import BigNumber from "bignumber.js"
-import { AccAddress, ValAddress, Validator } from "@terra-money/terra.js"
-import { Delegation, UnbondingDelegation } from "@terra-money/terra.js"
+import { AccAddress, ValAddress, Validator } from "@classic-terra/terra.js"
+import { Delegation, UnbondingDelegation } from "@classic-terra/terra.js"
 /* FIXME(terra.js): Import from terra.js */
-import { BondStatus } from "@terra-money/terra.proto/cosmos/staking/v1beta1/staking"
+import { BondStatus } from "@classic-terra/terra.proto/cosmos/staking/v1beta1/staking"
 import { has } from "utils/num"
 import { StakeAction } from "txs/stake/StakeForm"
 import { queryKey, Pagination, RefetchOptions } from "../query"

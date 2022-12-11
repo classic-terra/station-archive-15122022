@@ -2,7 +2,7 @@
 
 ![Banner](Banner.png)
 
-**Terra Station** is a web application to interact with [Terra Core](https://github.com/terra-money/core).
+**Terra Station** is a web application to interact with [Terra Core](https://github.com/classic-terra/core).
 
 Terra Station allows users to:
 
@@ -26,7 +26,7 @@ This project was bootstrapped with [Create React App](https://create-react-app.d
 Run Terra Station with the following commands:
 
 ```
-git clone https://github.com/terra-money/station.git
+git clone https://github.com/classic-terra/station.git
 cd station
 npm i
 npm run start

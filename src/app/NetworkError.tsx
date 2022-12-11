@@ -25,7 +25,7 @@ const NetworkError = () => {
         </h1>
 
         {isLocalTerra && (
-          <ExternalLink href="https://github.com/terra-money/localterra">
+          <ExternalLink href="https://github.com/classic-terra/localterra">
             {t("Learn more")}
           </ExternalLink>
         )}

@@ -2,7 +2,7 @@ import { useQuery } from "react-query"
 import axios, { AxiosError } from "axios"
 import { fromPairs, toPairs } from "ramda"
 import { flatten, groupBy, map, mergeAll, values } from "ramda"
-import { AccAddress } from "@terra-money/terra.js"
+import { AccAddress } from "@classic-terra/terra.js"
 import { ASSETS } from "config/constants"
 import shuffle from "utils/shuffle"
 import { queryKey, RefetchOptions } from "../query"
@@ -92,7 +92,7 @@ const sortWhitelistCW20 = (data: CW20Whitelist) => {
   const sorted = toPairs(data).sort(
     ([, a], [, b]) =>
       Number(b.symbol === "ANC") - Number(a.symbol === "ANC") ||
-      Number(b.protocol === "Anchor") - Number(a.protocol === "Anchor") ||
+      //   Number(b.protocol === "Anchor") - Number(a.protocol === "Anchor") ||
       Number(b.symbol === "MIR") - Number(a.symbol === "MIR") ||
       Number(b.protocol === "Mirror") - Number(a.protocol === "Mirror")
   )

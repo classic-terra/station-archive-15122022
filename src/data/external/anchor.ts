@@ -1,16 +1,16 @@
 import { useCallback, useMemo } from "react"
 import { useQuery } from "react-query"
 import BigNumber from "bignumber.js"
-import * as anchor from "@anchor-protocol/anchor.js"
+//import * as anchor from "@anchor-protocol/anchor.js"
 import { readAmount, toAmount } from "@terra.kitchen/utils"
-import { Coins } from "@terra-money/terra.js"
+import { Coins } from "@classic-terra/terra.js"
 import { has } from "utils/num"
 import { getAmount } from "utils/coin"
-import { AnchorEarnAction } from "txs/earn/AnchorEarnForm"
+//import { AnchorEarnAction } from "txs/earn/AnchorEarnForm"
 import { queryKey, RefetchOptions } from "../query"
 import { useAddress, useNetworkName } from "../wallet"
 import { useLCDClient } from "../queries/lcdClient"
-
+/*
 const {
   AddressProviderFromJson,
   columbus5,
@@ -59,7 +59,7 @@ const useAnchorEarn = () => {
   return earn
 }
 
-/* queries */
+/* queries 
 export const useAnchorTotalDeposit = () => {
   const earn = useAnchorEarn()
   const address = useAddress()
@@ -130,7 +130,7 @@ export const useAnchorGetMsgs = (rate: string) => {
   return getMsgs
 }
 
-/* helpers */
+ helpers 
 export const getAvailableAnchorEarnActions = (
   deposit: Amount,
   bankBalance: Coins
@@ -140,3 +140,4 @@ export const getAvailableAnchorEarnActions = (
     [AnchorEarnAction.WITHDRAW]: has(deposit),
   }
 }
+*/

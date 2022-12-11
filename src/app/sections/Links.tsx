@@ -17,11 +17,11 @@ const Links = () => {
         twitter: "https://twitter.com/terrac_money",
       }
     : {
-        medium: "https://medium.com/terra-money",
+        medium: "https://medium.com/classic-terra",
         discord: "https://terra.sc/discord",
         telegram: "https://t.me/TerraNetworkLobby",
         twitter: "https://twitter.com/terra_money",
-        github: "https://github.com/terra-money",
+        github: "https://github.com/classic-terra",
       }
 
   return (

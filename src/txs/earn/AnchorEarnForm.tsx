@@ -6,12 +6,13 @@ import { has } from "utils/num"
 import { getAmount } from "utils/coin"
 import { queryKey } from "data/query"
 import { useBankBalance } from "data/queries/bank"
-import { useAnchorGetMsgs } from "data/external/anchor"
+//import { useAnchorGetMsgs } from "data/external/anchor"
 import { Form, FormItem, Input } from "components/form"
 import { toInput, getPlaceholder } from "../utils"
 import validate from "../validate"
 import Tx, { getInitialGasDenom } from "../Tx"
 
+/*
 interface Props {
   tab: AnchorEarnAction
   deposit: string
@@ -31,21 +32,26 @@ const AnchorEarnForm = ({ tab, deposit, rate }: Props) => {
   const { t } = useTranslation()
   const bankBalance = useBankBalance()
 
-  /* tx context */
+  */
+
+/* tx context 
   const token = tab === AnchorEarnAction.DEPOSIT ? "uusd" : ""
   const initialGasDenom = getInitialGasDenom(bankBalance)
 
-  /* context */
-  const getMsgs = useAnchorGetMsgs(rate)
+  */
 
-  /* form */
+/* context 
+  const getMsgs = useAnchorGetMsgs(rate)
+  */
+
+/* form 
   const form = useForm<TxValues>({ mode: "onChange" })
   const { register, trigger, watch, setValue, handleSubmit, formState } = form
   const { errors } = formState
   const { input } = watch()
   const amount = toAmount(input)
-
-  /* tx */
+*/
+/* tx 
   const createTx = useCallback(
     ({ input }: TxValues) => {
       const amount = toAmount(input)
@@ -54,8 +60,8 @@ const AnchorEarnForm = ({ tab, deposit, rate }: Props) => {
     },
     [getMsgs, tab]
   )
-
-  /* fee */
+*/
+/* fee 
   const balance =
     tab === AnchorEarnAction.WITHDRAW ? deposit : getAmount(bankBalance, token)
   const estimationTxValues = useMemo(
@@ -63,7 +69,8 @@ const AnchorEarnForm = ({ tab, deposit, rate }: Props) => {
     () => ({ input: toInput(balance) }),
     [balance]
   )
-
+*/
+/*
   const onChangeMax = useCallback(
     async (input: number) => {
       setValue("input", input)
@@ -115,3 +122,4 @@ const AnchorEarnForm = ({ tab, deposit, rate }: Props) => {
 }
 
 export default AnchorEarnForm
+*/

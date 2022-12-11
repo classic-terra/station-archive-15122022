@@ -1,5 +1,5 @@
 import { PropsWithChildren } from "react"
-import { Coins } from "@terra-money/terra.js"
+import { Coins } from "@classic-terra/terra.js"
 import createContext from "utils/createContext"
 import { combineState } from "data/query"
 import { useActiveDenoms, useExchangeRates } from "data/queries/oracle"

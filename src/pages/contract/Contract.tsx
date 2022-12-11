@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import ManageSearchIcon from "@mui/icons-material/ManageSearch"
-import { AccAddress, ContractInfo } from "@terra-money/terra.js"
+import { AccAddress, ContractInfo } from "@classic-terra/terra.js"
 import createContext from "utils/createContext"
 import { useContractInfo } from "data/queries/wasm"
 import { Page, Card, Grid } from "components/layout"

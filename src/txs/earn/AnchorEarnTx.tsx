@@ -1,14 +1,14 @@
 import { useTranslation } from "react-i18next"
 import { combineState } from "data/query"
 import { useBankBalance } from "data/queries/bank"
-import { getAvailableAnchorEarnActions } from "data/external/anchor"
-import { useAnchorExchangeRate } from "data/external/anchor"
-import { useAnchorTotalDeposit } from "data/external/anchor"
+//import { getAvailableAnchorEarnActions } from "data/external/anchor"
+//import { useAnchorExchangeRate } from "data/external/anchor"
+//import { useAnchorTotalDeposit } from "data/external/anchor"
 import { Auto, Page, Tabs, Card } from "components/layout"
-import AnchorEarnPromote from "app/containers/AnchorEarnPromote"
+//import AnchorEarnPromote from "app/containers/AnchorEarnPromote"
 import TxContext from "../TxContext"
-import AnchorEarnForm, { AnchorEarnAction } from "./AnchorEarnForm"
-
+//import AnchorEarnForm, { AnchorEarnAction } from "./AnchorEarnForm"
+/*
 const AnchorEarnTx = () => {
   const { t } = useTranslation()
 
@@ -53,3 +53,4 @@ const AnchorEarnTx = () => {
 }
 
 export default AnchorEarnTx
+*/

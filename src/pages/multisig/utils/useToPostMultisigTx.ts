@@ -1,5 +1,5 @@
 import qs from "qs"
-import { Tx as UnsignedTx } from "@terra-money/terra.js"
+import { Tx as UnsignedTx } from "@classic-terra/terra.js"
 import { useAddress } from "data/wallet"
 import { useLCDClient } from "data/queries/lcdClient"
 

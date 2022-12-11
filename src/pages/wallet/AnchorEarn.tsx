@@ -1,15 +1,15 @@
 import { useTranslation } from "react-i18next"
-import { useAnchorTotalDeposit } from "data/external/anchor"
+//import { useAnchorTotalDeposit } from "data/external/anchor"
 import { has } from "utils/num"
 import { getAmount } from "utils/coin"
-import AnchorEarnLogo from "styles/images/AnchorEarn/AnchorEarnLogo"
+//import AnchorEarnLogo from "styles/images/AnchorEarn/AnchorEarnLogo"
 import { useBankBalance } from "data/queries/bank"
 import { LinkButton } from "components/general"
 import { Card } from "components/layout"
 import { Read } from "components/token"
-import AnchorEarnPromote from "app/containers/AnchorEarnPromote"
+//import AnchorEarnPromote from "app/containers/AnchorEarnPromote"
 import styles from "./AnchorEarn.module.scss"
-
+/*
 const AnchorEarn = () => {
   const { t } = useTranslation()
   const { data: totalDeposit, ...state } = useAnchorTotalDeposit()
@@ -41,3 +41,4 @@ const AnchorEarn = () => {
 }
 
 export default AnchorEarn
+*/

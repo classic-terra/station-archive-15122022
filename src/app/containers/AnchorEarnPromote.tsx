@@ -1,11 +1,12 @@
 import { PropsWithChildren } from "react"
 import { useTranslation } from "react-i18next"
 import { readPercent } from "@terra.kitchen/utils"
-import { useAnchorAPY } from "data/external/anchor"
+//import { useAnchorAPY } from "data/external/anchor"
 import { Card } from "components/layout"
-import AnchorEarnLogo from "styles/images/AnchorEarn/AnchorEarnLogo"
+//import AnchorEarnLogo from "styles/images/AnchorEarn/AnchorEarnLogo"
 import styles from "./AnchorEarnPromote.module.scss"
 
+/* anchor 
 const AnchorEarnPromote = ({ children }: PropsWithChildren<{}>) => {
   const { t } = useTranslation()
   const { data: apy, ...state } = useAnchorAPY()
@@ -30,3 +31,4 @@ const AnchorEarnPromote = ({ children }: PropsWithChildren<{}>) => {
 }
 
 export default AnchorEarnPromote
+*/
