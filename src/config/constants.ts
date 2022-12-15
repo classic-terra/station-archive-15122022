@@ -13,12 +13,11 @@ export const STATION = "https://station.classic-terra.com"
 export const FINDER = "https://finder.classic-terra.com"
 export const EXTENSION =
   "https://chrome.google.com/webstore/detail/aiifbnbfobpmeekipheeijimdpnlpgpp"
-export const TUTORIAL =
-  "https://docs.terra.money/learn/terra-station/Download/terra-station-desktop.html"
+export const TUTORIAL = "https://www.classic-terra.com/docs"
 
 /* website: stake */
 export const TERRA_VALIDATORS =
-  "https://github.com/classic-terra/validator-profiles/tree/master/validators/"
+  "https://github.com/terra-money/validator-profiles/tree/master/validators/"
 
 export const STAKE_ID = "https://stake.id/#/validator/"
 
@@ -33,5 +32,13 @@ export const CLASSIC_DEFAULT_GAS_ADJUSTMENT = 3
 export const TERRASWAP_COMMISSION_RATE = 0.003
 
 /* placeholder */
-// https://github.com/classic-terra/localterra
+// https://github.com/terra-money/localterra
 export const SAMPLE_ADDRESS = "terra1x46rqay4d3cssq8gxxvqz8xt6nwlz4td20k38v"
+
+export const CLASSIC_CHAIN_IDS = [
+  "columbus-5",
+  "rebel-1",
+  "rebel-2",
+  "rogue-1",
+  "rogue-2",
+]

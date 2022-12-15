@@ -1,5 +1,4 @@
 import { Grid } from "components/layout"
-//import LastHeight from "./LastHeight"
 import Links from "./Links"
 import styles from "./Aside.module.scss"
 

@@ -1,9 +1,9 @@
 import { useChainID } from "auth/hooks/useNetwork"
-import { LAZY_LIMIT } from "config/constants"
+import { LAZY_LIMIT, CLASSIC_CHAIN_IDS } from "config/constants"
 
 export const useIsClassic = () => {
   const chainId = useChainID()
-  return chainId.startsWith("columbus")
+  return CLASSIC_CHAIN_IDS.filter((id) => chainId.startsWith(id)).length !== 0
 }
 
 /* refetch */
@@ -29,8 +29,8 @@ export const combineState = (...results: QueryState[]) => ({
 /* queryKey */
 const mirror = <T>(obj: T, parentKey?: string): T =>
   Object.entries(obj).reduce((acc, [key, value]) => {
-    const next = value 
-      ? mirror(value, key) 
+    const next = value
+      ? mirror(value, key)
       : [parentKey, key].filter(Boolean).join(".")
 
     return { ...acc, [key]: next }
