@@ -20,7 +20,6 @@
     "@classic-terra/ledger-terra-js": "^1.3.1",
     "@classic-terra/log-finder-ruleset": "^1.0.0",
     "@classic-terra/terra.js": "^1.0.1",
-    "@terra-money/terra.js": "^3.1.7",
     "@classic-terra/terra.proto": "^1.0.0",
     "@classic-terra/wallet-provider": "^3.11.3",
     "@terra.kitchen/utils": "^1.0.7",
