@@ -22,7 +22,7 @@
     "@classic-terra/terra.js": "^1.0.1",
     "@terra-money/terra.js": "^3.1.7",
     "@classic-terra/terra.proto": "^1.0.0",
-    "@classic-terra/wallet-provider": "^3.11.2",
+    "@classic-terra/wallet-provider": "^3.11.3",
     "@terra.kitchen/utils": "^1.0.7",
     "@tippyjs/react": "^4.2.6",
     "axios": "^0.27.2",
